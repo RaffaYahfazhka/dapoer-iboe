@@ -1,26 +1,222 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Playfair Display', serif;
+
+  /* Material Design 3 - Warm Culinary Palette */
+  --color-primary: #B8421E;
+  --color-primary-light: #DE5B36;
+  --color-primary-dark: #8C2C10;
+  --color-primary-container: #FFDBD1;
+  --color-on-primary-container: #3C0A00;
+
+  --color-secondary: #4E6746;
+  --color-secondary-light: #6E8865;
+  --color-secondary-dark: #354E2E;
+  --color-secondary-container: #D1E9CA;
+  --color-on-secondary-container: #0C2009;
+
+  --color-tertiary: #785A28;
+  --color-tertiary-container: #FFE0A6;
+
+  --color-surface-light: #FFF8F6;
+  --color-surface-container-low: #FBF2EF;
+  --color-surface-container: #F5ECE8;
+  --color-surface-container-high: #EFE6E2;
+  --color-surface-container-highest: #E8E0DC;
+
+  /* Status Colors M3 */
+  --color-status-belum: #BA1A1A;
+  --color-status-belum-container: #FFDAD6;
+  --color-status-sedang: #B36B00;
+  --color-status-sedang-container: #FFE1B4;
+  --color-status-sudah: #246B34;
+  --color-status-sudah-container: #A7F3B0;
+
+  /* Admin M3 Dark Theme */
+  --color-admin-bg: #111416;
+  --color-admin-surface: #191C1E;
+  --color-admin-surface-container: #202326;
+  --color-admin-surface-high: #282C30;
+  --color-admin-surface-highest: #33373B;
+  --color-admin-border: #3A3E43;
+  --color-admin-text: #E1E3E5;
+  --color-admin-muted: #8E9196;
+  --color-admin-primary: #FFB59E;
+  --color-admin-primary-container: #70260D;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #FCF8F6;
+  --foreground: #221916;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Material Symbols Rounded standard styling */
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga' 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+  vertical-align: middle;
+}
+
+.material-symbols-rounded.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(184, 66, 30, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(184, 66, 30, 0.5);
+}
+
+/* M3 Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideUpModal {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(184, 66, 30, 0.4);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(184, 66, 30, 0);
+  }
+  100% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(184, 66, 30, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.35s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.animate-slide-up-modal {
+  animation: slideUpModal 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2.5s infinite;
+}
+
+/* Stagger children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeInUp 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.28s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.32s; }
+
+/* M3 Elevation Shadows & Tonal layers */
+.m3-elevation-1 {
+  box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
+}
+
+.m3-elevation-2 {
+  box-shadow: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.15);
+}
+
+.m3-elevation-3 {
+  box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.08), 0px 1px 3px 0px rgba(0, 0, 0, 0.18);
+}
+
+/* Touch targets */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
 }
