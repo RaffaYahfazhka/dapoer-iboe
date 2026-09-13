@@ -6,29 +6,40 @@
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Playfair Display', serif;
 
-  /* Material Design 3 - Warm Culinary Palette */
-  --color-primary: #B8421E;
+  /* ═══ Dapoer Iboe — Slate + GoFood Terracotta Palette ═══ */
+
+  /* Brand Core (Logo Slate) */
+  --color-brand-dark: #1E2D2F;
+  --color-brand-slate: #263639;
+
+  /* Accent Gradient (GoFood Appetite) */
+  --color-primary: #C83718;
   --color-primary-light: #DE5B36;
+  --color-primary-flame: #E86326;
   --color-primary-dark: #8C2C10;
   --color-primary-container: #FFDBD1;
   --color-on-primary-container: #3C0A00;
 
-  --color-secondary: #4E6746;
-  --color-secondary-light: #6E8865;
-  --color-secondary-dark: #354E2E;
+  /* Nature Green */
+  --color-secondary: #246B34;
+  --color-secondary-light: #16A34A;
   --color-secondary-container: #D1E9CA;
   --color-on-secondary-container: #0C2009;
 
+  /* Warm Accent */
   --color-tertiary: #785A28;
   --color-tertiary-container: #FFE0A6;
 
-  --color-surface-light: #FFF8F6;
-  --color-surface-container-low: #FBF2EF;
-  --color-surface-container: #F5ECE8;
-  --color-surface-container-high: #EFE6E2;
-  --color-surface-container-highest: #E8E0DC;
+  /* Surfaces — warm ivory tones */
+  --color-surface: #FCFBF9;
+  --color-surface-warm: #FFF8F6;
+  --color-surface-container-low: #F7F2EF;
+  --color-surface-container: #F0EAE6;
+  --color-surface-container-high: #EBE4DD;
+  --color-surface-container-highest: #E3DCD6;
+  --color-surface-border: #DDD5CE;
 
-  /* Status Colors M3 */
+  /* Status Colors */
   --color-status-belum: #BA1A1A;
   --color-status-belum-container: #FFDAD6;
   --color-status-sedang: #B36B00;
@@ -36,7 +47,7 @@
   --color-status-sudah: #246B34;
   --color-status-sudah-container: #A7F3B0;
 
-  /* Admin M3 Dark Theme */
+  /* Admin Dark Theme */
   --color-admin-bg: #111416;
   --color-admin-surface: #191C1E;
   --color-admin-surface-container: #202326;
@@ -50,8 +61,8 @@
 }
 
 :root {
-  --background: #FCF8F6;
-  --foreground: #221916;
+  --background: #FCFBF9;
+  --foreground: #1E2D2F;
 }
 
 body {
@@ -102,18 +113,19 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(184, 66, 30, 0.25);
+  background: rgba(200, 55, 24, 0.2);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(184, 66, 30, 0.5);
+  background: rgba(200, 55, 24, 0.45);
 }
 
-/* M3 Animations */
+/* ═══ Animations ═══ */
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -151,15 +163,15 @@ html {
 @keyframes pulse-ring {
   0% {
     transform: scale(0.96);
-    box-shadow: 0 0 0 0 rgba(184, 66, 30, 0.4);
+    box-shadow: 0 0 0 0 rgba(200, 55, 24, 0.4);
   }
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(184, 66, 30, 0);
+    box-shadow: 0 0 0 10px rgba(200, 55, 24, 0);
   }
   100% {
     transform: scale(0.96);
-    box-shadow: 0 0 0 0 rgba(184, 66, 30, 0);
+    box-shadow: 0 0 0 0 rgba(200, 55, 24, 0);
   }
 }
 
@@ -168,30 +180,39 @@ html {
   100% { background-position: 200% 0; }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
 .animate-fade-in-up {
-  animation: fadeInUp 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-slide-in-left {
-  animation: slideInLeft 0.35s cubic-bezier(0.2, 0, 0, 1) forwards;
+  animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-slide-up-modal {
-  animation: slideUpModal 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-pulse-ring {
   animation: pulse-ring 2.5s infinite;
 }
 
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
 /* Stagger children animation */
 .stagger-children > * {
   opacity: 0;
-  animation: fadeInUp 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
 .stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
@@ -202,17 +223,18 @@ html {
 .stagger-children > *:nth-child(7) { animation-delay: 0.28s; }
 .stagger-children > *:nth-child(8) { animation-delay: 0.32s; }
 
-/* M3 Elevation Shadows & Tonal layers */
+/* ═══ Elevation Shadows ═══ */
+
 .m3-elevation-1 {
-  box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.06), 0px 1px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
 .m3-elevation-2 {
-  box-shadow: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 2px 6px 2px rgba(0, 0, 0, 0.06), 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
 }
 
 .m3-elevation-3 {
-  box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.08), 0px 1px 3px 0px rgba(0, 0, 0, 0.18);
+  box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.15);
 }
 
 /* Touch targets */

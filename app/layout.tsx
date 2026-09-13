@@ -39,7 +39,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#B8421E",
+  themeColor: "#C83718",
 };
 
 export default function RootLayout({
@@ -61,7 +61,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans bg-[#FCF8F6] text-[#221916] antialiased selection:bg-orange-200 selection:text-orange-950">
+      <body className="min-h-full flex flex-col font-sans bg-[#FCFBF9] text-[#1E2D2F] antialiased selection:bg-orange-200 selection:text-orange-950">
         {children}
       </body>
     </html>

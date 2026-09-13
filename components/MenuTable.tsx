@@ -28,7 +28,7 @@ export default function MenuTable() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-64 bg-[#F5ECE8] rounded-3xl animate-pulse" />
+          <div key={i} className="h-64 bg-[#F0EAE6] rounded-3xl animate-pulse" />
         ))}
       </div>
     )
@@ -41,10 +41,10 @@ export default function MenuTable() {
         {menuItems.map((item) => (
           <div
             key={item.hari}
-            className="group relative bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-[#E8E0DC] flex flex-col"
+            className="group relative bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-[#DDD5CE] flex flex-col"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#B8421E] to-[#DE5B36] px-5 py-3.5 flex items-center justify-between text-white">
+            <div className="bg-gradient-to-r from-[#C83718] to-[#DE5B36] px-5 py-3.5 flex items-center justify-between text-white">
               <h3 className="font-extrabold text-base sm:text-lg tracking-wide flex items-center gap-2">
                 <Icon name="calendar_today" size={18} />
                 {item.hari}
@@ -67,7 +67,7 @@ export default function MenuTable() {
                 </div>
                 <ul className="space-y-1.5">
                   {(item.pagi || []).map((menu, i) => (
-                    <li key={i} className="text-xs sm:text-sm text-[#221916]/80 flex items-center gap-2 font-medium">
+                    <li key={i} className="text-xs sm:text-sm text-[#1E2D2F]/80 flex items-center gap-2 font-medium">
                       <span className="w-1.5 h-1.5 rounded-full bg-orange-500/70 flex-shrink-0" />
                       {menu}
                     </li>
@@ -75,7 +75,7 @@ export default function MenuTable() {
                 </ul>
               </div>
 
-              <div className="border-t border-[#E8E0DC]" />
+              <div className="border-t border-[#DDD5CE]" />
 
               {/* Siang */}
               <div>
@@ -83,36 +83,36 @@ export default function MenuTable() {
                   <span className="p-1 rounded-lg bg-amber-100 text-amber-700">
                     <Icon name="wb_sunny" size={16} />
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#B8421E]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#C83718]">
                     Shift Siang (Makan Siang)
                   </span>
                 </div>
                 <ul className="space-y-1.5">
                   {item.siang.map((menu, i) => (
-                    <li key={i} className="text-xs sm:text-sm text-[#221916]/80 flex items-center gap-2 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B8421E]/60 flex-shrink-0" />
+                    <li key={i} className="text-xs sm:text-sm text-[#1E2D2F]/80 flex items-center gap-2 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C83718]/60 flex-shrink-0" />
                       {menu}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="border-t border-[#E8E0DC]" />
+              <div className="border-t border-[#DDD5CE]" />
 
               {/* Malam */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="p-1 rounded-lg bg-indigo-100 text-indigo-700">
+                  <span className="p-1 rounded-lg bg-[#212E32] text-[#FFDBD1]">
                     <Icon name="bedtime" size={16} />
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#212E32]">
                     Shift Malam (Makan Malam)
                   </span>
                 </div>
                 <ul className="space-y-1.5">
                   {item.malam.map((menu, i) => (
-                    <li key={i} className="text-xs sm:text-sm text-[#221916]/80 flex items-center gap-2 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500/60 flex-shrink-0" />
+                    <li key={i} className="text-xs sm:text-sm text-[#1E2D2F]/80 flex items-center gap-2 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#212E32]/70 flex-shrink-0" />
                       {menu}
                     </li>
                   ))}

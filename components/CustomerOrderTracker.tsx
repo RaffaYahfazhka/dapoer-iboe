@@ -5,6 +5,7 @@ import Icon from '@/components/m3/Icon'
 import { DeliveryRecord, DeliveryStep } from '@/lib/types'
 import {
   getDeliveriesByCustomerQuery,
+  getCustomerDeliveryHistory,
   getPelangganList,
   generateDailyDeliveries,
   formatDate,
@@ -62,6 +63,8 @@ export default function CustomerOrderTracker() {
   const [matchedRecords, setMatchedRecords] = useState<DeliveryRecord[]>([])
   const [activeRecord, setActiveRecord] = useState<DeliveryRecord | null>(null)
   const [accordionOpen, setAccordionOpen] = useState(false)
+  const [historyRecords, setHistoryRecords] = useState<DeliveryRecord[]>([])
+  const [historyAccordionOpen, setHistoryAccordionOpen] = useState(false)
   const [todayMenu, setTodayMenu] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -82,8 +85,12 @@ export default function CustomerOrderTracker() {
         if (aktifPelanggans.length > 0) {
           const defaultQuery = aktifPelanggans[0].whatsapp
           setSearchQuery(defaultQuery)
-          const records = await getDeliveriesByCustomerQuery(defaultQuery)
+          const [records, history] = await Promise.all([
+            getDeliveriesByCustomerQuery(defaultQuery),
+            getCustomerDeliveryHistory(defaultQuery),
+          ])
           setMatchedRecords(records)
+          setHistoryRecords(history)
           if (records.length > 0) {
             setActiveRecord(records[0])
           }
@@ -120,10 +127,15 @@ export default function CustomerOrderTracker() {
     if (!query.trim()) {
       setMatchedRecords([])
       setActiveRecord(null)
+      setHistoryRecords([])
       return
     }
-    const results = await getDeliveriesByCustomerQuery(query)
+    const [results, history] = await Promise.all([
+      getDeliveriesByCustomerQuery(query),
+      getCustomerDeliveryHistory(query),
+    ])
     setMatchedRecords(results)
+    setHistoryRecords(history)
     if (results.length > 0) {
       setActiveRecord(results[0])
     } else {
@@ -151,7 +163,7 @@ export default function CustomerOrderTracker() {
     return (
       <div className="w-full max-w-4xl mx-auto flex items-center justify-center min-h-[40vh]">
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-[#B8421E]/20 border-t-[#B8421E] rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-10 h-10 border-4 border-[#C83718]/20 border-t-[#C83718] rounded-full animate-spin mx-auto mb-3" />
           <p className="text-[#785A28] text-sm">Memuat data pesanan...</p>
         </div>
       </div>
@@ -161,11 +173,11 @@ export default function CustomerOrderTracker() {
   return (
     <div className="w-full max-w-4xl mx-auto">
       {/* Search & Quick Samples Card */}
-      <div className="bg-[#FFF8F6] rounded-3xl p-5 sm:p-7 border border-[#E8E0DC] shadow-sm mb-6">
+      <div className="bg-[#FCFBF9] rounded-3xl p-5 sm:p-7 border border-[#DDD5CE] shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h3 className="text-lg sm:text-xl font-bold text-[#221916] flex items-center gap-2">
-              <Icon name="radar" size={22} className="text-[#B8421E]" />
+            <h3 className="text-lg sm:text-xl font-bold text-[#1E2D2F] flex items-center gap-2">
+              <Icon name="radar" size={22} className="text-[#C83718]" />
               Lacak Pengiriman Pesanan
             </h3>
             <p className="text-xs text-[#785A28] mt-0.5">
@@ -189,13 +201,13 @@ export default function CustomerOrderTracker() {
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Masukkan No. WhatsApp (contoh: 081234567890) atau Nama..."
-            className="w-full pl-11 pr-10 py-3.5 bg-white border border-[#E8E0DC] rounded-2xl text-sm text-[#221916] placeholder:text-[#785A28]/60 focus:outline-none focus:border-[#B8421E] focus:ring-2 focus:ring-[#B8421E]/15 transition-all shadow-inner"
+            className="w-full pl-11 pr-10 py-3.5 bg-white border border-[#DDD5CE] rounded-2xl text-sm text-[#1E2D2F] placeholder:text-[#785A28]/60 focus:outline-none focus:border-[#C83718] focus:ring-2 focus:ring-[#C83718]/15 transition-all shadow-inner"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => handleSearch('')}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#785A28] hover:text-[#221916]"
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#785A28] hover:text-[#1E2D2F]"
             >
               <Icon name="close" size={18} />
             </button>
@@ -216,8 +228,8 @@ export default function CustomerOrderTracker() {
                 onClick={() => handleSearch(sample.hp)}
                 className={`px-3 py-1.5 rounded-full font-semibold transition-all cursor-pointer ${
                   searchQuery.includes(sample.hp)
-                    ? 'bg-[#B8421E] text-white shadow-sm'
-                    : 'bg-[#F5ECE8] text-[#785A28] hover:bg-[#EFE6E2] hover:text-[#221916]'
+                    ? 'bg-[#C83718] text-white shadow-sm'
+                    : 'bg-[#F0EAE6] text-[#785A28] hover:bg-[#EBE4DD] hover:text-[#1E2D2F]'
                 }`}
               >
                 {sample.nama}
@@ -229,11 +241,11 @@ export default function CustomerOrderTracker() {
 
       {/* If No Record Found */}
       {!activeRecord ? (
-        <div className="bg-white rounded-3xl p-10 border border-[#E8E0DC] text-center shadow-sm">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FFDBD1] text-[#B8421E] flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-10 border border-[#DDD5CE] text-center shadow-sm">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FFDBD1] text-[#C83718] flex items-center justify-center">
             <Icon name="manage_search" size={32} />
           </div>
-          <h4 className="text-base font-bold text-[#221916] mb-1">
+          <h4 className="text-base font-bold text-[#1E2D2F] mb-1">
             {searchQuery ? 'Pesanan Tidak Ditemukan' : 'Silakan Cari Pesanan Anda'}
           </h4>
           <p className="text-xs text-[#785A28] max-w-md mx-auto mb-5">
@@ -254,12 +266,12 @@ export default function CustomerOrderTracker() {
         </div>
       ) : (
         /* Active Record Tracker Card */
-        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#E8E0DC] shadow-md transition-all">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#DDD5CE] shadow-md transition-all">
           {/* Top Status Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-[#E8E0DC]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-[#DDD5CE]">
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="text-xl sm:text-2xl font-extrabold text-[#221916]">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-[#1E2D2F]">
                   {activeRecord.pelangganNama}
                 </h3>
                 <span
@@ -268,7 +280,7 @@ export default function CustomerOrderTracker() {
                       ? 'bg-orange-100 text-orange-900 border border-orange-300'
                       : activeRecord.jadwal === 'siang'
                       ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                      : 'bg-indigo-100 text-indigo-900 border border-indigo-300'
+                      : 'bg-[#212E32] text-[#FFDBD1] border border-[#212E32]'
                   }`}
                 >
                   <Icon
@@ -289,46 +301,49 @@ export default function CustomerOrderTracker() {
                     : 'Malam'}
                 </span>
 
-                {matchedRecords.length > 1 && (
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900 font-bold border border-orange-200">
-                    {matchedRecords.length} Jadwal Hari Ini
+                {matchedRecords.length > 1 ? (
+                  <span className="text-xs px-3 py-1 rounded-full bg-[#FFDBD1] text-[#C83718] font-extrabold border border-[#C83718]/20 shadow-sm flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#C83718] animate-ping" />
+                    {matchedRecords.length} Pengantaran Hari Ini: {matchedRecords.map(r => r.jadwal === 'pagi' ? 'Pagi' : r.jadwal === 'siang' ? 'Siang' : 'Malam').join(' & ')}
+                  </span>
+                ) : (
+                  <span className="text-xs px-3 py-1 rounded-full bg-[#D1E9CA] text-[#0C2009] font-bold border border-[#246B34]/20">
+                    1 Pengantaran Hari Ini: {activeRecord.jadwal === 'pagi' ? 'Pagi' : activeRecord.jadwal === 'siang' ? 'Siang' : 'Malam'}
                   </span>
                 )}
               </div>
 
-              {/* Shift Switcher jika 1 pelanggan punya multi shift (Pagi, Siang & Malam) */}
+              {/* Shift Switcher — max 3 clean GoFood pill tabs */}
               {matchedRecords.length > 1 && (
-                <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                  <span className="text-[11px] font-bold text-[#785A28]">Pilih Shift:</span>
-                  {matchedRecords.map((rec) => (
-                    <button
-                      key={rec.id}
-                      type="button"
-                      onClick={() => setActiveRecord(rec)}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        activeRecord.id === rec.id
-                          ? 'bg-[#B8421E] text-white shadow-sm'
-                          : 'bg-[#F5ECE8] text-[#785A28] hover:bg-[#EFE6E2]'
-                      }`}
-                    >
-                      <Icon
-                        name={
-                          rec.jadwal === 'pagi'
-                            ? 'wb_twilight'
-                            : rec.jadwal === 'siang'
-                            ? 'wb_sunny'
-                            : 'bedtime'
-                        }
-                        size={13}
-                      />
-                      Shift{' '}
-                      {rec.jadwal === 'pagi'
-                        ? 'Pagi'
-                        : rec.jadwal === 'siang'
-                        ? 'Siang'
-                        : 'Malam'}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <span className="text-xs font-bold text-[#785A28]">Pilih Shift:</span>
+                  {matchedRecords.map((rec) => {
+                    const isSelected = activeRecord.id === rec.id
+                    return (
+                      <button
+                        key={rec.id}
+                        type="button"
+                        onClick={() => setActiveRecord(rec)}
+                        className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-[#C83718] via-[#DE5B36] to-[#F97316] text-white shadow-md shadow-[#C83718]/30 -translate-y-0.5 scale-105'
+                            : 'bg-[#F0EAE6] text-[#1E2D2F]/75 hover:bg-[#EBE4DD] hover:text-[#1E2D2F] hover:-translate-y-0.5'
+                        }`}
+                      >
+                        <Icon
+                          name={
+                            rec.jadwal === 'pagi'
+                              ? 'wb_twilight'
+                              : rec.jadwal === 'siang'
+                              ? 'wb_sunny'
+                              : 'bedtime'
+                          }
+                          size={15}
+                        />
+                        Shift {rec.jadwal === 'pagi' ? 'Pagi' : rec.jadwal === 'siang' ? 'Siang' : 'Malam'}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
@@ -340,7 +355,7 @@ export default function CustomerOrderTracker() {
 
             {/* Current Step Pill */}
             <div className="self-start sm:self-auto px-4 py-2 rounded-2xl bg-[#FFDBD1] text-[#3C0A00] flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#B8421E] animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#C83718] animate-pulse" />
               <div className="text-left">
                 <p className="text-[10px] uppercase font-bold tracking-wider opacity-70">
                   Tahap {currentStep} dari 5 ({progressPercent}%)
@@ -355,13 +370,13 @@ export default function CustomerOrderTracker() {
           {/* Progress Bar Line with Milestone Points */}
           <div className="relative my-8 px-2">
             <div className="flex justify-between items-center text-xs font-bold text-[#785A28] mb-2">
-              <span className="text-[#B8421E]">Diterima</span>
+              <span className="text-[#C83718]">Diterima</span>
               <span>Dimasak</span>
               <span>Siap Kirim</span>
               <span>Di Jalan</span>
               <span className={currentStep === 5 ? 'text-[#246B34]' : ''}>Sampai</span>
             </div>
-            <div className="w-full bg-[#E8E0DC] h-3 rounded-full overflow-hidden flex">
+            <div className="w-full bg-[#DDD5CE] h-3 rounded-full overflow-hidden flex">
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
@@ -369,7 +384,7 @@ export default function CustomerOrderTracker() {
                     currentStep >= s
                       ? currentStep === 5
                         ? 'bg-[#246B34]'
-                        : 'bg-gradient-to-r from-[#B8421E] to-amber-500'
+                        : 'bg-gradient-to-r from-[#C83718] to-amber-500'
                       : 'bg-transparent'
                   }`}
                 />
@@ -388,20 +403,20 @@ export default function CustomerOrderTracker() {
                   key={item.step}
                   className={`relative flex items-start gap-4 p-4 sm:p-5 rounded-2xl transition-all duration-300 ${
                     isCurrent
-                      ? 'bg-[#FFF8F6] border-2 border-[#B8421E] shadow-md animate-fade-in'
+                      ? 'bg-[#FCFBF9] border-2 border-[#C83718] shadow-md animate-fade-in'
                       : isPast
-                      ? 'bg-[#FBF2EF]/60 border border-[#E8E0DC]'
-                      : 'bg-transparent border border-dashed border-[#E8E0DC] opacity-50'
+                      ? 'bg-[#F7F2EF]/60 border border-[#DDD5CE]'
+                      : 'bg-transparent border border-dashed border-[#DDD5CE] opacity-50'
                   }`}
                 >
                   {/* Step Icon Badge */}
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
                       isCurrent
-                        ? 'bg-[#B8421E] text-white shadow-lg animate-pulse-ring'
+                        ? 'bg-[#C83718] text-white shadow-lg animate-pulse-ring'
                         : isPast
                         ? 'bg-[#246B34] text-white'
-                        : 'bg-[#E8E0DC] text-[#785A28]'
+                        : 'bg-[#DDD5CE] text-[#785A28]'
                     }`}
                   >
                     {isPast ? (
@@ -417,17 +432,17 @@ export default function CustomerOrderTracker() {
                       <h4
                         className={`text-sm sm:text-base font-bold ${
                           isCurrent
-                            ? 'text-[#B8421E]'
+                            ? 'text-[#C83718]'
                             : isPast
                             ? 'text-[#246B34]'
-                            : 'text-[#221916]'
+                            : 'text-[#1E2D2F]'
                         }`}
                       >
                         {item.step}. {item.title}
                       </h4>
 
                       {isCurrent && (
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#B8421E] text-white">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#C83718] text-white">
                           Sedang Berlangsung
                         </span>
                       )}
@@ -438,7 +453,7 @@ export default function CustomerOrderTracker() {
                       )}
                     </div>
 
-                    <p className="text-xs text-[#221916]/80 font-medium mt-1">
+                    <p className="text-xs text-[#1E2D2F]/80 font-medium mt-1">
                       {item.detail}
                     </p>
 
@@ -446,9 +461,9 @@ export default function CustomerOrderTracker() {
                     {isCurrent && item.step === 4 && (
                       <div className="mt-3 p-3 bg-white rounded-xl border border-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <Icon name="sports_motorsports" size={20} className="text-[#B8421E]" />
+                          <Icon name="sports_motorsports" size={20} className="text-[#C83718]" />
                           <div>
-                            <p className="text-xs font-bold text-[#221916]">
+                            <p className="text-xs font-bold text-[#1E2D2F]">
                               {activeRecord.driverNama || 'Pak Joko (Kurir Dapoer Iboe)'}
                             </p>
                             <p className="text-[11px] text-[#785A28]">
@@ -460,7 +475,7 @@ export default function CustomerOrderTracker() {
                         {activeRecord.driverHp && (
                           <a
                             href={`tel:${activeRecord.driverHp}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#F5ECE8] hover:bg-[#EFE6E2] text-[#B8421E] text-xs font-bold self-start sm:self-auto transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#F0EAE6] hover:bg-[#EBE4DD] text-[#C83718] text-xs font-bold self-start sm:self-auto transition-colors"
                           >
                             <Icon name="call" size={14} />
                             Hubungi Kurir
@@ -481,14 +496,14 @@ export default function CustomerOrderTracker() {
           </div>
 
           {/* Collapsible Accordion: Ringkasan Pesanan */}
-          <div className="border border-[#E8E0DC] rounded-2xl overflow-hidden mb-6">
+          <div className="border border-[#DDD5CE] rounded-2xl overflow-hidden mb-6">
             <button
               type="button"
               onClick={() => setAccordionOpen(!accordionOpen)}
-              className="w-full px-5 py-3.5 bg-[#FBF2EF] hover:bg-[#F5ECE8] transition-colors flex items-center justify-between text-left"
+              className="w-full px-5 py-3.5 bg-[#F7F2EF] hover:bg-[#F0EAE6] transition-colors flex items-center justify-between text-left"
             >
-              <span className="text-xs sm:text-sm font-bold text-[#221916] flex items-center gap-2">
-                <Icon name="restaurant_menu" size={18} className="text-[#B8421E]" />
+              <span className="text-xs sm:text-sm font-bold text-[#1E2D2F] flex items-center gap-2">
+                <Icon name="restaurant_menu" size={18} className="text-[#C83718]" />
                 Lihat Menu Makanan & Alamat Pengantaran
               </span>
               <Icon
@@ -504,8 +519,8 @@ export default function CustomerOrderTracker() {
                   <p className="font-bold text-[#785A28] uppercase tracking-wider text-[10px] mb-1">
                     Alamat Pengantaran:
                   </p>
-                  <p className="text-sm text-[#221916] font-medium flex items-start gap-1.5">
-                    <Icon name="location_on" size={16} className="text-[#B8421E] flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-[#1E2D2F] font-medium flex items-start gap-1.5">
+                    <Icon name="location_on" size={16} className="text-[#C83718] flex-shrink-0 mt-0.5" />
                     {activeRecord.pelangganAlamat}
                   </p>
                 </div>
@@ -519,7 +534,7 @@ export default function CustomerOrderTracker() {
                       {todayMenu.map((m, i) => (
                         <span
                           key={i}
-                          className="px-2.5 py-1 rounded-lg bg-[#F5ECE8] text-[#221916] font-medium"
+                          className="px-2.5 py-1 rounded-lg bg-[#F0EAE6] text-[#1E2D2F] font-medium"
                         >
                           {m}
                         </span>
@@ -530,6 +545,61 @@ export default function CustomerOrderTracker() {
               </div>
             )}
           </div>
+
+          {/* Collapsible Accordion: Riwayat Pengantaran Sebelumnya (History) */}
+          {historyRecords.length > 0 && (
+            <div className="border border-[#DDD5CE] rounded-2xl overflow-hidden mb-6">
+              <button
+                type="button"
+                onClick={() => setHistoryAccordionOpen(!historyAccordionOpen)}
+                className="w-full px-5 py-3.5 bg-[#F7F2EF] hover:bg-[#F0EAE6] transition-colors flex items-center justify-between text-left cursor-pointer"
+              >
+                <span className="text-xs sm:text-sm font-bold text-[#1E2D2F] flex items-center gap-2">
+                  <Icon name="history" size={18} className="text-[#C83718]" />
+                  Riwayat Pengantaran Sebelumnya ({historyRecords.length} Hari Terakhir)
+                </span>
+                <Icon
+                  name={historyAccordionOpen ? 'expand_less' : 'expand_more'}
+                  size={20}
+                  className="text-[#785A28]"
+                />
+              </button>
+
+              {historyAccordionOpen && (
+                <div className="p-4 sm:p-5 bg-white space-y-2.5 text-xs animate-fade-in">
+                  <p className="text-[11px] text-[#785A28] mb-2 font-medium">
+                    Riwayat jadwal pengantaran sebelumnya yang telah selesai tercatat di sistem:
+                  </p>
+                  <div className="divide-y divide-[#DDD5CE]/60">
+                    {historyRecords.map((item) => (
+                      <div key={item.id} className="py-2.5 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2 h-2 rounded-full bg-[#246B34]" />
+                          <span className="font-bold text-[#1E2D2F]">
+                            {formatDateDisplay(item.tanggal)}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#F0EAE6] text-[#785A28] text-[10px] font-extrabold uppercase">
+                            Shift {item.jadwal.charAt(0).toUpperCase() + item.jadwal.slice(1)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#246B34] font-bold text-xs flex items-center gap-1">
+                            <Icon name="check_circle" size={14} filled />
+                            Terkirim
+                          </span>
+                          {item.driverNama && (
+                            <span className="text-[#785A28] text-[11px]">
+                              ({item.driverNama})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick WhatsApp Support CTA */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#D1E9CA]/50 border border-[#4E6746]/20 flex flex-col sm:flex-row items-center justify-between gap-4">

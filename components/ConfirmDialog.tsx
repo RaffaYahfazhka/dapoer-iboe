@@ -46,7 +46,7 @@ export default function ConfirmDialog({
     default: {
       icon: 'help',
       iconBg: 'bg-[#FFB59E]/15 text-[#FFB59E]',
-      btnBg: 'bg-[#B8421E] hover:bg-[#8C2C10] text-white',
+      btnBg: 'bg-[#C83718] hover:bg-[#8C2C10] text-white',
     },
     danger: {
       icon: 'delete',

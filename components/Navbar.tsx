@@ -17,17 +17,18 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '#beranda', label: 'Beranda', icon: 'home' },
+    { href: '#paket', label: 'Paket Catering', icon: 'loyalty' },
     { href: '#menu', label: 'Menu Mingguan', icon: 'restaurant_menu' },
+    { href: '#testimoni', label: 'Testimoni', icon: 'reviews' },
     { href: '#tracking', label: 'Lacak Pesanan', icon: 'radar' },
     { href: '#langganan', label: 'Langganan', icon: 'event_note' },
-    { href: '#tentang', label: 'Tentang Kami', icon: 'info' },
   ]
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-md py-2.5 border-b border-[#E8E0DC]'
+          ? 'bg-white/95 backdrop-blur-xl shadow-md py-2.5 border-b border-[#DDD5CE]'
           : 'bg-gradient-to-b from-black/60 to-transparent py-4'
       }`}
     >
@@ -35,7 +36,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo Brand */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-11 h-11 rounded-full overflow-hidden ring-2 ring-white/30 group-hover:ring-[#B8421E] transition-all flex-shrink-0 shadow-md">
+            <div className="relative w-11 h-11 rounded-full overflow-hidden ring-2 ring-white/30 group-hover:ring-[#C83718] transition-all flex-shrink-0 shadow-md">
               <Image
                 src="/logo.jpg"
                 alt="Logo Dapoer Iboe"
@@ -48,7 +49,7 @@ export default function Navbar() {
             <div>
               <h1
                 className={`font-black text-lg sm:text-xl tracking-tight leading-none transition-colors ${
-                  scrolled ? 'text-[#221916]' : 'text-white'
+                  scrolled ? 'text-[#1E2D2F]' : 'text-white'
                 }`}
               >
                 DAPOER IBOE
@@ -69,20 +70,20 @@ export default function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
                   scrolled
-                    ? 'text-[#221916]/80 hover:text-[#B8421E] hover:bg-[#F5ECE8]'
+                    ? 'text-[#1E2D2F]/75 hover:text-[#C83718] hover:bg-[#F0EAE6]'
                     : 'text-white/90 hover:text-white hover:bg-white/15'
                 }`}
               >
-                <Icon name={link.icon} size={16} />
+                <Icon name={link.icon} size={15} />
                 {link.label}
               </a>
             ))}
 
             <Link
               href="/admin"
-              className="ml-2 px-5 py-2.5 bg-[#B8421E] hover:bg-[#8C2C10] text-white text-xs font-bold rounded-full transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center gap-1.5"
+              className="ml-2 px-5 py-2.5 bg-gradient-to-r from-[#C83718] to-[#DE5B36] hover:from-[#8C2C10] hover:to-[#C83718] text-white text-xs font-bold rounded-full transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center gap-1.5"
             >
               <Icon name="admin_panel_settings" size={16} />
               Admin Portal
@@ -94,7 +95,7 @@ export default function Navbar() {
             <Link
               href="/admin"
               className={`p-2 rounded-full transition-colors ${
-                scrolled ? 'text-[#B8421E] hover:bg-[#F5ECE8]' : 'text-white hover:bg-white/10'
+                scrolled ? 'text-[#C83718] hover:bg-[#F0EAE6]' : 'text-white hover:bg-white/10'
               }`}
               title="Admin"
             >
@@ -105,7 +106,7 @@ export default function Navbar() {
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
               className={`p-2 rounded-full transition-colors ${
-                scrolled ? 'text-[#221916] hover:bg-[#F5ECE8]' : 'text-white hover:bg-white/10'
+                scrolled ? 'text-[#1E2D2F] hover:bg-[#F0EAE6]' : 'text-white hover:bg-white/10'
               }`}
               aria-label="Toggle navigation menu"
             >
@@ -117,23 +118,23 @@ export default function Navbar() {
         {/* Mobile Dropdown Menu */}
         {mobileOpen && (
           <div className="lg:hidden mt-3 pt-2 pb-4 animate-fade-in">
-            <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-[#E8E0DC] space-y-1">
+            <div className="bg-white/95 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-[#DDD5CE] space-y-1">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-[#221916] hover:bg-[#F5ECE8] hover:text-[#B8421E] transition-all"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-[#1E2D2F] hover:bg-[#F0EAE6] hover:text-[#C83718] transition-all"
                 >
-                  <Icon name={link.icon} size={18} className="text-[#B8421E]" />
+                  <Icon name={link.icon} size={18} className="text-[#C83718]" />
                   {link.label}
                 </a>
               ))}
-              <div className="pt-2 border-t border-[#E8E0DC]">
+              <div className="pt-2 border-t border-[#DDD5CE]">
                 <Link
                   href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-[#B8421E] text-white rounded-2xl text-xs font-bold shadow-md"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-[#C83718] to-[#DE5B36] text-white rounded-2xl text-xs font-bold shadow-md"
                 >
                   <Icon name="admin_panel_settings" size={18} />
                   Buka Portal Admin

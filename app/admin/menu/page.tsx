@@ -252,7 +252,7 @@ export default function MenuPage() {
               <button
                 type="button"
                 onClick={handleSave}
-                className="px-5 py-2.5 rounded-full bg-[#B8421E] hover:bg-[#8C2C10] text-white text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-full bg-[#C83718] hover:bg-[#8C2C10] text-white text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5"
               >
                 <Icon name="save" size={16} />
                 Simpan Perubahan

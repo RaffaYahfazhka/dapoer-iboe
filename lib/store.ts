@@ -202,7 +202,14 @@ export async function generateDailyDeliveries(tanggal: string): Promise<Delivery
     if (p.jadwal === 'semua') {
       jadwalList = ['pagi', 'siang', 'malam']
     } else if (p.jadwal === 'keduanya') {
-      jadwalList = ['siang', 'malam']
+      const catLower = (p.catatan || '').toLowerCase()
+      if (catLower.includes('pagi') && catLower.includes('siang')) {
+        jadwalList = ['pagi', 'siang']
+      } else if (catLower.includes('pagi') && catLower.includes('malam')) {
+        jadwalList = ['pagi', 'malam']
+      } else {
+        jadwalList = ['siang', 'malam']
+      }
     } else {
       jadwalList = [p.jadwal as 'pagi' | 'siang' | 'malam']
     }
@@ -353,18 +360,62 @@ export async function getDeliveriesByCustomerQuery(query: string): Promise<Deliv
   const cleanQuery = query.trim()
   if (!cleanQuery) return []
 
+  const today = new Date().toISOString().split('T')[0]
+
   const { data, error } = await supabase
     .from('delivery_records')
     .select('*')
     .or(`pelanggan_nama.ilike.%${cleanQuery}%,pelanggan_whatsapp.ilike.%${cleanQuery}%`)
-    .order('tanggal', { ascending: false })
+    .eq('tanggal', today)
+    .order('jadwal', { ascending: true })
 
   if (error) {
     console.error('Error searching deliveries:', error)
     return []
   }
 
-  return (data ?? []).map(mapDeliveryFromDb)
+  // Deduplicate: keep only the first record per (pelanggan_id, jadwal) for today
+  const seen = new Set<string>()
+  const deduped = (data ?? []).filter(row => {
+    const key = `${row.pelanggan_id}_${row.jadwal}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  return deduped.map(mapDeliveryFromDb)
+}
+
+export async function getCustomerDeliveryHistory(query: string): Promise<DeliveryRecord[]> {
+  const cleanQuery = query.trim()
+  if (!cleanQuery) return []
+
+  const today = new Date().toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('delivery_records')
+    .select('*')
+    .or(`pelanggan_nama.ilike.%${cleanQuery}%,pelanggan_whatsapp.ilike.%${cleanQuery}%`)
+    .lt('tanggal', today)
+    .order('tanggal', { ascending: false })
+    .order('jadwal', { ascending: true })
+    .limit(15)
+
+  if (error) {
+    console.error('Error searching past deliveries:', error)
+    return []
+  }
+
+  // Deduplicate per (pelanggan_id, tanggal, jadwal)
+  const seen = new Set<string>()
+  const deduped = (data ?? []).filter(row => {
+    const key = `${row.pelanggan_id}_${row.tanggal}_${row.jadwal}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  return deduped.map(mapDeliveryFromDb)
 }
 
 export async function getTodayStats(): Promise<{
