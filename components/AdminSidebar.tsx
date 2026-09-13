@@ -26,6 +26,11 @@ const menuItems = [
     label: 'Menu Mingguan',
     icon: 'restaurant_menu',
   },
+  {
+    href: '/admin/testimoni',
+    label: 'Testimoni',
+    icon: 'reviews',
+  },
 ]
 
 export default function AdminSidebar({ mobileOpen, onClose }: AdminSidebarProps) {

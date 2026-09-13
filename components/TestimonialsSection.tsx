@@ -1,80 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Icon from '@/components/m3/Icon'
-
-interface TestimonialItem {
-  badge: string
-  dishName: string
-  quote: string
-  authorName: string
-  authorRole: string
-  bgImage: string
-  avatarImage: string
-  rating: number
-}
-
-const testimonials: TestimonialItem[] = [
-  {
-    badge: 'PAKET 2 · SIANG & MALAM',
-    dishName: 'Ayam Bakar Madu & Sambal Bajak',
-    quote:
-      '“Sejak langganan Dapoer Iboe, saya tidak perlu pusing lagi mikirin makan siang di kantor. Bumbu ayam bakarnya meresap sempurna, sambalnya nendang, dan porsinya pas banget! Menunya juga beda tiap hari jadi nggak pernah bosan.”',
-    authorName: 'Rina Melati',
-    authorRole: 'Karyawan Swasta, SCBD Jakarta',
-    bgImage:
-      'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80',
-    avatarImage:
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    rating: 5,
-  },
-  {
-    badge: 'HEALTHY FOOD · BULKING',
-    dishName: 'Dada Ayam Panggang Rosemary & Salad',
-    quote:
-      '“Paket bulking-nya mantap! Protein tinggi, garam dan minyak terkontrol tapi rasanya tetap gurih nikmat, bukan makanan diet hambar. Cocok banget buat yang butuh asupan kalori dan nutrisi berkualitas tanpa ribet meal prep.”',
-    authorName: 'Ahmad Fauzi',
-    authorRole: 'Penggiat Gym & Fitness Coach',
-    bgImage:
-      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=1200&q=80',
-    avatarImage:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    rating: 5,
-  },
-  {
-    badge: 'PAKET 1 · 3X MAKAN KELUARGA',
-    dishName: 'Rendang Sapi Dapoer Iboe & Sayur Kapau',
-    quote:
-      '“Dengan paket 3x makan sekeluarga, saya jadi punya waktu berkualitas lebih banyak untuk anak-anak. Masakannya otentik rumahan banget, suami saya sampai bilang rasanya persis masakan ibu di kampung halaman.”',
-    authorName: 'Siti Rahmawati',
-    authorRole: 'Ibu Rumah Tangga, Tebet',
-    bgImage:
-      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80',
-    avatarImage:
-      'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
-    rating: 5,
-  },
-  {
-    badge: 'PAKET 3 · 1X MAKAN HEMAT',
-    dishName: 'Nasi Liwet Komplit Ikan Teri & Tempe Orek',
-    quote:
-      '“Harganya super terjangkau buat mahasiswa! Mulai Rp 132rb per minggu sudah dapat makan siang hangat 6 hari full, plus gratis ongkir ke kos. Sangat recommended buat anak rantau yang mau hemat tapi tetap makan bergizi.”',
-    authorName: 'Dimas Prasetyo',
-    authorRole: 'Mahasiswa S2, UI Depok',
-    bgImage:
-      'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=1200&q=80',
-    avatarImage:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-    rating: 5,
-  },
-]
+import { TestimonialItem, getStoredTestimonials } from '@/lib/testimonials'
 
 export default function TestimonialsSection() {
+  const [items, setItems] = useState<TestimonialItem[]>(() => getStoredTestimonials())
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFading, setIsFading] = useState(false)
 
-  const current = testimonials[currentIndex]
-  const totalCount = testimonials.length
+  useEffect(() => {
+    const handleUpdate = () => {
+      const updated = getStoredTestimonials()
+      setItems(updated)
+    }
+    window.addEventListener('dapoer_iboe_testimonials_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('dapoer_iboe_testimonials_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
+  }, [])
+
+  const safeIndex = items.length > 0 ? Math.min(currentIndex, items.length - 1) : 0
+  const current = items[safeIndex]
+  const totalCount = items.length
 
   const handleSelect = (idx: number) => {
     if (idx === currentIndex) return
@@ -91,9 +41,12 @@ export default function TestimonialsSection() {
   }
 
   const handleNext = () => {
+    if (totalCount === 0) return
     const nextIdx = (currentIndex + 1) % totalCount
     handleSelect(nextIdx)
   }
+
+  if (totalCount === 0 || !current) return null
 
   return (
     <section
@@ -255,11 +208,11 @@ export default function TestimonialsSection() {
 
               {/* Vertical Selectable Stack */}
               <div className="space-y-3" role="tablist" aria-label="Pilih ulasan hidangan">
-                {testimonials.map((item, idx) => {
-                  const isActive = idx === currentIndex
+                {items.map((item, idx) => {
+                  const isActive = idx === safeIndex
                   return (
                     <button
-                      key={item.dishName}
+                      key={item.id || item.dishName}
                       type="button"
                       role="tab"
                       aria-selected={isActive}

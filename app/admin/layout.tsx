@@ -15,6 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
     { href: '/admin/pelanggan', label: 'Pelanggan', icon: 'group' },
     { href: '/admin/menu', label: 'Menu', icon: 'restaurant_menu' },
+    { href: '/admin/testimoni', label: 'Testi', icon: 'reviews' },
     { href: '/', label: 'Web', icon: 'storefront' },
   ]
 

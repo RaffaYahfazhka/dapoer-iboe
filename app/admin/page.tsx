@@ -239,6 +239,31 @@ export default function AdminDashboard() {
 
         <DeliveryTracker records={deliveries} onUpdate={refreshData} />
       </div>
+
+      {/* Quick Testimonial Summary Card */}
+      <div className="bg-gradient-to-r from-[#1E2022] to-[#251814] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-[#3A3E43] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#70260D] text-[#FFB59E] flex items-center justify-center flex-shrink-0 shadow-md">
+            <Icon name="reviews" size={24} />
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-[#E1E3E5]">
+              Ulasan & Testimoni Pelanggan
+            </h3>
+            <p className="text-xs text-[#8E9196] mt-0.5">
+              Kelola rating bintang, kutipan pelanggan, dan foto masakan yang tampil di beranda
+            </p>
+          </div>
+        </div>
+
+        <a
+          href="/admin/testimoni"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#70260D] hover:bg-[#8C3317] text-[#FFB59E] text-xs font-bold transition-all flex-shrink-0 self-start sm:self-auto"
+        >
+          <span>Kelola Testimoni</span>
+          <Icon name="arrow_forward" size={16} />
+        </a>
+      </div>
     </div>
   )
 }
