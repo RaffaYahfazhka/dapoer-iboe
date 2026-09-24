@@ -108,18 +108,36 @@ export default function CustomerOrderTracker() {
 
   // Load today's menu when active record shift changes
   useEffect(() => {
+    let cancelled = false
     const loadMenu = async () => {
-      const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-      const todayDayName = days[new Date().getDay()]
-      const menuData = await getMenu()
-      const todayMenuItem = menuData.items.find((m) => m.hari === todayDayName)
-      if (todayMenuItem) {
-        setTodayMenu(todayMenuItem[activeRecordShift] || [])
-      } else {
-        setTodayMenu([])
+      try {
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+        const todayDayName = days[new Date().getDay()]
+        const menuData = await getMenu()
+        if (cancelled) return
+        const todayMenuItem = menuData?.items?.find((m) => m.hari === todayDayName)
+        if (todayMenuItem) {
+          setTodayMenu(todayMenuItem[activeRecordShift] || [])
+        } else {
+          setTodayMenu([])
+        }
+      } catch (err) {
+        console.warn('Error loading today menu:', err)
+        if (!cancelled) setTodayMenu([])
       }
     }
+
     loadMenu()
+
+    const handleMenuUpdate = () => {
+      loadMenu()
+    }
+    window.addEventListener('dapoer_iboe_menu_updated', handleMenuUpdate)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('dapoer_iboe_menu_updated', handleMenuUpdate)
+    }
   }, [activeRecordShift])
 
   const handleSearch = useCallback(async (query: string) => {

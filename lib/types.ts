@@ -15,6 +15,8 @@ export interface Pelanggan {
   status: PelangganStatus
   createdAt: string
   updatedAt?: string
+  paket?: string
+  durasi?: string
 }
 
 export interface DeliveryRecord {

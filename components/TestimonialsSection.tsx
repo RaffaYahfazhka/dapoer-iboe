@@ -167,7 +167,8 @@ export default function TestimonialsSection() {
                     <img
                       src={current.avatarImage}
                       alt={current.authorName}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white/90 shadow-md flex-shrink-0"
+                      referrerPolicy="no-referrer"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white/90 shadow-md flex-shrink-0 bg-white"
                     />
                     <div>
                       <h3 className="text-white font-bold text-base tracking-wide">

@@ -105,6 +105,9 @@ export default function SubscriptionForm() {
         jadwal,
         mulaiTanggal: formData.mulaiTanggal,
         catatan,
+        paket: formData.paket,
+        durasi: formData.durasi,
+        status: 'pending',
       })
       setSubmitted(true)
     } catch (err) {
@@ -115,36 +118,80 @@ export default function SubscriptionForm() {
   }
 
   if (submitted) {
+    const cleanWaAdmin = '6281234567890'
+    const waText = encodeURIComponent(
+      `Halo Dapoer Iboe, saya baru saja mendaftar langganan catering:\n\n• Nama: ${formData.nama}\n• Paket: ${formData.paket}\n• Durasi: ${formData.durasi}\n• Shift: ${shiftLabel}\n• Mulai Tanggal: ${formData.mulaiTanggal}\n• Alamat: ${formData.alamat}\n\nMohon konfirmasi pesanan saya. Terima kasih!`
+    )
+    const waLink = `https://wa.me/${cleanWaAdmin}?text=${waText}`
+
     return (
-      <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-[#DDD5CE] text-center animate-fade-in-up">
-        <div className="w-20 h-20 mx-auto mb-6 bg-[#D1E9CA] text-[#246B34] rounded-full flex items-center justify-center">
-          <Icon name="check_circle" size={40} filled />
+      <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-[#DDD5CE] text-center animate-fade-in-up">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-[#D1E9CA] text-[#246B34] rounded-full flex items-center justify-center shadow-inner">
+          <Icon name="check_circle" size={36} filled />
         </div>
-        <h3 className="text-2xl font-extrabold text-[#1E2D2F] mb-3">
+        <h3 className="text-xl sm:text-2xl font-black text-[#1E2D2F] mb-2 tracking-tight">
           Pendaftaran Berhasil Dikirim!
         </h3>
-        <p className="text-[#1E2D2F]/70 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-          Terima kasih <strong className="text-[#C83718]">{formData.nama}</strong>! Data pesanan Anda telah tersimpan. Tim admin akan segera menghubungi nomor WhatsApp Anda untuk konfirmasi awal pengantaran.
+        <p className="text-[#1E2D2F]/75 text-xs sm:text-sm mb-5 max-w-md mx-auto leading-relaxed">
+          Terima kasih <strong className="text-[#C83718]">{formData.nama}</strong>! Data pesanan langganan Anda sudah tersimpan di sistem Dapoer Iboe.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setSubmitted(false)
-            setSelectedShifts(['siang', 'malam'])
-            setFormData({
-              nama: '',
-              whatsapp: '',
-              alamat: '',
-              paket: 'Paket 2 (2x Makan)',
-              durasi: 'Mingguan (6 Hari)',
-              mulaiTanggal: '',
-              catatan: '',
-            })
-          }}
-          className="px-6 py-3 bg-gradient-to-r from-[#C83718] to-[#DE5B36] hover:from-[#8C2C10] hover:to-[#C83718] text-white rounded-full text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer"
-        >
-          Daftarkan Pesanan Lain
-        </button>
+
+        {/* Order Details Card */}
+        <div className="bg-[#FAF8F5] border border-[#DDD5CE] rounded-2xl p-4 mb-6 text-left text-xs space-y-2.5 max-w-md mx-auto">
+          <div className="flex items-center justify-between pb-2 border-b border-[#DDD5CE]/60">
+            <span className="text-[#785A28] font-bold">Paket Catering:</span>
+            <span className="font-extrabold text-[#C83718]">{formData.paket}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#785A28] font-bold">Durasi:</span>
+            <span className="font-semibold text-[#1E2D2F]">{formData.durasi}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#785A28] font-bold">Shift Pengantaran:</span>
+            <span className="font-semibold text-[#1E2D2F]">{selectedShifts.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#785A28] font-bold">Mulai Tanggal:</span>
+            <span className="font-semibold text-[#1E2D2F]">{formData.mulaiTanggal}</span>
+          </div>
+          <div className="pt-2 border-t border-[#DDD5CE]/60 flex items-start gap-1.5">
+            <Icon name="location_on" size={14} className="text-[#785A28] flex-shrink-0 mt-0.5" />
+            <span className="text-[#1E2D2F]/80 text-[11px] line-clamp-2">{formData.alamat}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto flex-1 px-5 py-3 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Icon name="chat" size={16} />
+            Konfirmasi Cepat via WhatsApp
+          </a>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSubmitted(false)
+              setSelectedShifts(['siang', 'malam'])
+              setFormData({
+                nama: '',
+                whatsapp: '',
+                alamat: '',
+                paket: 'Paket 2 (2x Makan)',
+                durasi: 'Mingguan (6 Hari)',
+                mulaiTanggal: '',
+                catatan: '',
+              })
+            }}
+            className="w-full sm:w-auto px-5 py-3 bg-[#F0EAE6] hover:bg-[#DDD5CE] text-[#1E2D2F] rounded-full text-xs font-bold transition-all cursor-pointer"
+          >
+            Daftarkan Pesanan Lain
+          </button>
+        </div>
       </div>
     )
   }

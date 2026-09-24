@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useState, useEffect, useMemo, useSyncExternalStore, useRef } from 'react'
 import Icon from '@/components/m3/Icon'
 import SearchBar from '@/components/m3/SearchBar'
 import FilterChips, { FilterOption } from '@/components/m3/FilterChips'
@@ -11,6 +11,10 @@ import {
   saveStoredTestimonials,
   INITIAL_TESTIMONIALS,
 } from '@/lib/testimonials'
+import { validateImageFile, compressImageFile } from '@/lib/image-utils'
+
+const DEFAULT_AVATAR =
+  'https://www.nicepng.com/png/detail/73-730154_open-default-profile-picture-png.png'
 
 const emptySubscribe = () => () => {}
 
@@ -37,7 +41,7 @@ export default function AdminTestimoniPage() {
     authorRole: '',
     rating: 5,
     bgImage: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80',
-    avatarImage: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    avatarImage: DEFAULT_AVATAR,
     featured: true,
     date: new Date().toISOString().split('T')[0],
   })
@@ -49,11 +53,29 @@ export default function AdminTestimoniPage() {
     name: '',
   })
 
+  // Photo upload states
+  const bgFileInputRef = useRef<HTMLInputElement>(null)
+  const avatarFileInputRef = useRef<HTMLInputElement>(null)
+  const [bgInputMode, setBgInputMode] = useState<'upload' | 'url'>('upload')
+  const [avatarInputMode, setAvatarInputMode] = useState<'upload' | 'url'>('upload')
+  const [bgError, setBgError] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [isProcessingBg, setIsProcessingBg] = useState(false)
+  const [isProcessingAvatar, setIsProcessingAvatar] = useState(false)
+
   useEffect(() => {
     if (!isClient) return
-    const loaded = getStoredTestimonials()
-    setItems(loaded)
-    setLoading(false)
+    let cancelled = false
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        const loaded = getStoredTestimonials()
+        setItems(loaded)
+        setLoading(false)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
   }, [isClient])
 
   const filteredItems = useMemo(() => {
@@ -78,8 +100,78 @@ export default function AdminTestimoniPage() {
     { key: '4', label: '4 Bintang', count: items.filter((i) => i.rating === 4).length },
   ]
 
+  const processBgFile = async (file: File) => {
+    setBgError(null)
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      setBgError(validation.error || 'Format file tidak didukung!')
+      if (bgFileInputRef.current) bgFileInputRef.current.value = ''
+      return
+    }
+
+    try {
+      setIsProcessingBg(true)
+      const compressedDataUrl = await compressImageFile(file, 1200, 900, 0.85)
+      setFormData((prev) => ({ ...prev, bgImage: compressedDataUrl }))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal memproses file foto'
+      setBgError(msg)
+    } finally {
+      setIsProcessingBg(false)
+      if (bgFileInputRef.current) bgFileInputRef.current.value = ''
+    }
+  }
+
+  const handleBgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      processBgFile(file)
+    }
+  }
+
+  const handleBgDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (file) {
+      processBgFile(file)
+    }
+  }
+
+  const processAvatarFile = async (file: File) => {
+    setAvatarError(null)
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      setAvatarError(validation.error || 'Format file tidak didukung!')
+      if (avatarFileInputRef.current) avatarFileInputRef.current.value = ''
+      return
+    }
+
+    try {
+      setIsProcessingAvatar(true)
+      const compressedDataUrl = await compressImageFile(file, 320, 320, 0.85)
+      setFormData((prev) => ({ ...prev, avatarImage: compressedDataUrl }))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal memproses file avatar'
+      setAvatarError(msg)
+    } finally {
+      setIsProcessingAvatar(false)
+      if (avatarFileInputRef.current) avatarFileInputRef.current.value = ''
+    }
+  }
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      processAvatarFile(file)
+    }
+  }
+
   const handleOpenAdd = () => {
     setEditingItem(null)
+    setBgError(null)
+    setAvatarError(null)
+    setBgInputMode('upload')
+    setAvatarInputMode('upload')
     setFormData({
       dishName: '',
       badge: 'PAKET 2 · SIANG & MALAM',
@@ -88,7 +180,7 @@ export default function AdminTestimoniPage() {
       authorRole: '',
       rating: 5,
       bgImage: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80',
-      avatarImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      avatarImage: DEFAULT_AVATAR,
       featured: true,
       date: new Date().toISOString().split('T')[0],
     })
@@ -97,15 +189,19 @@ export default function AdminTestimoniPage() {
 
   const handleOpenEdit = (item: TestimonialItem) => {
     setEditingItem(item)
+    setBgError(null)
+    setAvatarError(null)
+    setBgInputMode('upload')
+    setAvatarInputMode('upload')
     setFormData({
-      dishName: item.dishName,
-      badge: item.badge,
-      quote: item.quote,
-      authorName: item.authorName,
-      authorRole: item.authorRole,
-      rating: item.rating,
-      bgImage: item.bgImage,
-      avatarImage: item.avatarImage,
+      dishName: item.dishName || '',
+      badge: item.badge || '',
+      quote: item.quote || '',
+      authorName: item.authorName || '',
+      authorRole: item.authorRole || '',
+      rating: item.rating || 5,
+      bgImage: item.bgImage || '',
+      avatarImage: item.avatarImage || DEFAULT_AVATAR,
       featured: item.featured ?? true,
       date: item.date || new Date().toISOString().split('T')[0],
     })
@@ -307,12 +403,22 @@ export default function AdminTestimoniPage() {
 
               {/* Dish Photo Thumbnail & Quote */}
               <div className="flex gap-3.5 my-3.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.bgImage}
-                  alt={item.dishName}
-                  className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 border border-[#3A3E43] shadow-md"
-                />
+                <div
+                  className="relative group/thumb cursor-pointer flex-shrink-0"
+                  onClick={() => handleOpenEdit(item)}
+                  title="Klik untuk ubah foto & ulasan testimoni"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.bgImage}
+                    alt={item.dishName}
+                    className="w-20 h-20 rounded-2xl object-cover border border-[#3A3E43] shadow-md group-hover/thumb:border-[#FFB59E] transition-all"
+                  />
+                  <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover/thumb:opacity-100 transition-opacity flex flex-col items-center justify-center text-[#FFB59E]">
+                    <Icon name="photo_camera" size={18} />
+                    <span className="text-[9px] font-bold mt-0.5">Ubah</span>
+                  </div>
+                </div>
                 <blockquote className="text-xs sm:text-sm text-[#8E9196] line-clamp-3 italic leading-relaxed">
                   {item.quote}
                 </blockquote>
@@ -324,9 +430,10 @@ export default function AdminTestimoniPage() {
               <div className="flex items-center gap-2.5 min-w-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.avatarImage}
+                  src={item.avatarImage || DEFAULT_AVATAR}
                   alt={item.authorName}
-                  className="w-9 h-9 rounded-full object-cover border border-[#FFB59E]/40 flex-shrink-0"
+                  referrerPolicy="no-referrer"
+                  className="w-9 h-9 rounded-full object-cover border border-[#FFB59E]/40 flex-shrink-0 bg-white"
                 />
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[#E1E3E5] truncate">{item.authorName}</p>
@@ -385,6 +492,28 @@ export default function AdminTestimoniPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4 text-xs sm:text-sm">
+              {/* Permanent hidden file inputs (rendered outside conditionals to prevent React input uncontrolled/controlled reconciliation warnings) */}
+              <input
+                key="permanent-hidden-file-input-bg"
+                ref={bgFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleBgFileChange}
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+              <input
+                key="permanent-hidden-file-input-avatar"
+                ref={avatarFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleAvatarFileChange}
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+
               <div>
                 <label className="block text-xs font-semibold text-[#8E9196] mb-1.5">
                   Nama Hidangan / Menu
@@ -393,7 +522,7 @@ export default function AdminTestimoniPage() {
                   type="text"
                   required
                   placeholder="Contoh: Ayam Bakar Madu & Sambal Bajak"
-                  value={formData.dishName}
+                  value={formData.dishName ?? ''}
                   onChange={(e) => setFormData({ ...formData, dishName: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
                 />
@@ -408,7 +537,7 @@ export default function AdminTestimoniPage() {
                     type="text"
                     required
                     placeholder="Contoh: PAKET 2 · SIANG & MALAM"
-                    value={formData.badge}
+                    value={formData.badge ?? ''}
                     onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
                   />
@@ -438,7 +567,7 @@ export default function AdminTestimoniPage() {
                   rows={4}
                   required
                   placeholder="Tulis ulasan jujur dari pelanggan mengenai hidangan..."
-                  value={formData.quote}
+                  value={formData.quote ?? ''}
                   onChange={(e) => setFormData({ ...formData, quote: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
                 />
@@ -453,7 +582,7 @@ export default function AdminTestimoniPage() {
                     type="text"
                     required
                     placeholder="Contoh: Rina Melati"
-                    value={formData.authorName}
+                    value={formData.authorName ?? ''}
                     onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
                   />
@@ -467,39 +596,269 @@ export default function AdminTestimoniPage() {
                     type="text"
                     required
                     placeholder="Contoh: Karyawan Swasta, SCBD Jakarta"
-                    value={formData.authorRole}
+                    value={formData.authorRole ?? ''}
                     onChange={(e) => setFormData({ ...formData, authorRole: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#8E9196] mb-1.5">
-                    URL Foto Masakan (Unsplash / Web)
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/..."
-                    value={formData.bgImage}
-                    onChange={(e) => setFormData({ ...formData, bgImage: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
-                  />
+              {/* Foto Masakan (bgImage) */}
+              <div className="space-y-2 pt-2 border-t border-[#3A3E43]/60">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold text-[#E1E3E5] flex items-center gap-1.5">
+                      <Icon name="image" size={16} className="text-[#FFB59E]" />
+                      <span>Foto Masakan / Hidangan</span>
+                    </label>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#202326] border border-[#3A3E43] text-[#8E9196]">
+                      Khusus .png, .jpg, .jpeg (Bukan PDF)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center bg-[#202326] p-0.5 rounded-lg border border-[#3A3E43]">
+                    <button
+                      type="button"
+                      onClick={() => setBgInputMode('upload')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                        bgInputMode === 'upload'
+                          ? 'bg-[#FFB59E] text-[#3C0A00] shadow-sm'
+                          : 'text-[#8E9196] hover:text-[#E1E3E5]'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBgInputMode('url')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                        bgInputMode === 'url'
+                          ? 'bg-[#FFB59E] text-[#3C0A00] shadow-sm'
+                          : 'text-[#8E9196] hover:text-[#E1E3E5]'
+                      }`}
+                    >
+                      URL Gambar
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-[#8E9196] mb-1.5">
-                    URL Foto Avatar Pelanggan
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/..."
-                    value={formData.avatarImage}
-                    onChange={(e) => setFormData({ ...formData, avatarImage: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
-                  />
+                {bgInputMode === 'upload' ? (
+                  <div>
+                    {formData.bgImage ? (
+                      <div className="relative rounded-2xl overflow-hidden border border-[#3A3E43] bg-[#202326] group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.bgImage}
+                          alt="Pratinjau Masakan"
+                          className="w-full h-40 sm:h-48 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2.5 p-4">
+                          <button
+                            type="button"
+                            onClick={() => bgFileInputRef.current?.click()}
+                            disabled={isProcessingBg}
+                            className="px-3.5 py-2 bg-[#FFB59E] text-[#3C0A00] rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg hover:bg-[#DE5B36] hover:text-white transition-all active:scale-95"
+                          >
+                            <Icon name="photo_camera" size={16} />
+                            <span>Ganti Foto dari Galeri</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, bgImage: '' }))}
+                            className="px-3 py-2 bg-[#202326]/90 border border-red-500/40 text-red-400 rounded-xl font-semibold text-xs hover:bg-red-500/20 transition-all"
+                            title="Hapus foto ini"
+                          >
+                            <Icon name="delete" size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => bgFileInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={handleBgDrop}
+                        className="w-full border-2 border-dashed border-[#3A3E43] hover:border-[#FFB59E]/60 rounded-2xl p-6 text-center cursor-pointer bg-[#202326]/50 hover:bg-[#202326] transition-all"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-[#FFB59E]/10 text-[#FFB59E] flex items-center justify-center mx-auto mb-2">
+                          <Icon name="add_photo_alternate" size={24} />
+                        </div>
+                        <p className="text-xs font-bold text-[#E1E3E5]">
+                          Klik untuk upload foto dari galeri / file
+                        </p>
+                        <p className="text-[11px] text-[#8E9196] mt-1">
+                          Hanya format <span className="text-[#FFB59E] font-semibold">PNG, JPG, atau JPEG</span> (PDF tidak didukung)
+                        </p>
+                      </div>
+                    )}
+
+                    {isProcessingBg && (
+                      <p className="text-[11px] text-[#FFB59E] flex items-center gap-1.5 mt-1.5 animate-pulse">
+                        <Icon name="sync" size={14} className="animate-spin" />
+                        Mengoptimalkan resolusi foto...
+                      </p>
+                    )}
+
+                    {bgError && (
+                      <div className="mt-1.5 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                        <Icon name="error" size={16} className="flex-shrink-0" />
+                        <span>{bgError}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      key="input-bg-image-url-field"
+                      type="url"
+                      placeholder="https://images.unsplash.com/..."
+                      value={formData.bgImage ?? ''}
+                      onChange={(e) => setFormData({ ...formData, bgImage: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
+                    />
+                    {formData.bgImage && (
+                      <div className="mt-2 rounded-xl overflow-hidden border border-[#3A3E43] h-28 w-full bg-[#202326]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={formData.bgImage} alt="Pratinjau Masakan" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Foto Avatar Pelanggan (avatarImage) */}
+              <div className="space-y-2 pt-2 border-t border-[#3A3E43]/60">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold text-[#E1E3E5] flex items-center gap-1.5">
+                      <Icon name="account_circle" size={16} className="text-[#FFB59E]" />
+                      <span>Foto Avatar / Profil Pelanggan</span>
+                    </label>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#202326] border border-[#3A3E43] text-[#8E9196]">
+                      Khusus .png, .jpg, .jpeg
+                    </span>
+                  </div>
+
+                  <div className="flex items-center bg-[#202326] p-0.5 rounded-lg border border-[#3A3E43]">
+                    <button
+                      type="button"
+                      onClick={() => setAvatarInputMode('upload')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                        avatarInputMode === 'upload'
+                          ? 'bg-[#FFB59E] text-[#3C0A00] shadow-sm'
+                          : 'text-[#8E9196] hover:text-[#E1E3E5]'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarInputMode('url')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                        avatarInputMode === 'url'
+                          ? 'bg-[#FFB59E] text-[#3C0A00] shadow-sm'
+                          : 'text-[#8E9196] hover:text-[#E1E3E5]'
+                      }`}
+                    >
+                      URL Avatar
+                    </button>
+                  </div>
                 </div>
+
+                {avatarInputMode === 'upload' ? (
+                  <div>
+                    <div className="flex items-center gap-4 bg-[#202326] border border-[#3A3E43] p-3 rounded-2xl">
+                      <div className="relative flex-shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.avatarImage || DEFAULT_AVATAR}
+                          alt="Avatar Pelanggan"
+                          referrerPolicy="no-referrer"
+                          className="w-16 h-16 rounded-full object-cover border-2 border-[#FFB59E]/40 bg-white"
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => avatarFileInputRef.current?.click()}
+                            disabled={isProcessingAvatar}
+                            className="px-3.5 py-2 bg-[#FFB59E] text-[#3C0A00] rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md hover:bg-[#DE5B36] hover:text-white transition-all active:scale-95"
+                          >
+                            <Icon name="photo_camera" size={15} />
+                            <span>Pilih Foto Avatar</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({ ...prev, avatarImage: DEFAULT_AVATAR }))
+                              setAvatarError(null)
+                            }}
+                            className="px-3 py-2 rounded-xl text-xs text-[#8E9196] hover:text-[#E1E3E5] hover:bg-[#282C30] border border-[#3A3E43] transition-all font-semibold flex items-center gap-1.5 active:scale-95"
+                            title="Kembalikan ke foto profil default"
+                          >
+                            <Icon name="history" size={15} />
+                            <span>Reset Foto Profil</span>
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-[#8E9196]">
+                          Pilih foto profil dari galeri (.png, .jpg, .jpeg). PDF ditolak.
+                        </p>
+                      </div>
+                    </div>
+
+                    {isProcessingAvatar && (
+                      <p className="text-[11px] text-[#FFB59E] flex items-center gap-1.5 mt-1.5 animate-pulse">
+                        <Icon name="sync" size={14} className="animate-spin" />
+                        Mengompres foto avatar...
+                      </p>
+                    )}
+
+                    {avatarError && (
+                      <div className="mt-1.5 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                        <Icon name="error" size={16} className="flex-shrink-0" />
+                        <span>{avatarError}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        key="input-avatar-url-field"
+                        type="url"
+                        placeholder="https://images.unsplash.com/..."
+                        value={formData.avatarImage ?? ''}
+                        onChange={(e) => setFormData({ ...formData, avatarImage: e.target.value })}
+                        className="flex-1 px-3.5 py-2.5 bg-[#202326] border border-[#3A3E43] rounded-xl text-[#E1E3E5] focus:outline-none focus:border-[#FFB59E]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, avatarImage: DEFAULT_AVATAR }))
+                          setAvatarError(null)
+                        }}
+                        className="px-3 py-2.5 bg-[#202326] border border-[#3A3E43] text-[#8E9196] hover:text-[#E1E3E5] hover:bg-[#282C30] rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 active:scale-95"
+                        title="Kembalikan ke foto profil default"
+                      >
+                        <Icon name="history" size={14} />
+                        <span>Reset Foto Profil</span>
+                      </button>
+                    </div>
+                    {formData.avatarImage && (
+                      <div className="flex items-center gap-3 bg-[#202326] p-2.5 rounded-xl border border-[#3A3E43]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.avatarImage || DEFAULT_AVATAR}
+                          alt="Pratinjau Avatar"
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-10 rounded-full object-cover border border-[#FFB59E]/40 bg-white"
+                        />
+                        <span className="text-[11px] text-[#8E9196] truncate">{formData.avatarImage}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#3A3E43]/60">

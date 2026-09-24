@@ -19,9 +19,31 @@ export default function MenuTable() {
 
   useEffect(() => {
     if (!isClient) return
-    getMenu()
-      .then((menu) => setMenuItems(menu.items))
-      .finally(() => setLoading(false))
+    let cancelled = false
+    const fetchMenu = () => {
+      getMenu()
+        .then((menu) => {
+          if (!cancelled) setMenuItems(menu?.items || [])
+        })
+        .catch((err) => {
+          console.warn('Failed to load menu in MenuTable:', err)
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    }
+
+    fetchMenu()
+
+    const handleMenuUpdate = () => {
+      fetchMenu()
+    }
+    window.addEventListener('dapoer_iboe_menu_updated', handleMenuUpdate)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('dapoer_iboe_menu_updated', handleMenuUpdate)
+    }
   }, [isClient])
 
   if (!isClient || loading) {

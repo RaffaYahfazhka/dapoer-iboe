@@ -25,7 +25,7 @@ export default function MenuPage() {
 
   const loadData = useCallback(async () => {
     const menu = await getMenu()
-    return menu.items
+    return menu?.items || []
   }, [])
 
   useEffect(() => {
@@ -37,7 +37,20 @@ export default function MenuPage() {
         setLoading(false)
       }
     })
-    return () => { cancelled = true }
+
+    const handleMenuUpdate = () => {
+      loadData().then((items) => {
+        if (!cancelled) {
+          setMenuItems(items)
+        }
+      })
+    }
+    window.addEventListener('dapoer_iboe_menu_updated', handleMenuUpdate)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('dapoer_iboe_menu_updated', handleMenuUpdate)
+    }
   }, [isClient, loadData])
 
   const handleEdit = (item: MenuItem, jadwal: 'pagi' | 'siang' | 'malam') => {
