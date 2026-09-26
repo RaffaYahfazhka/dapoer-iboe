@@ -257,7 +257,7 @@ export default function AdminDashboard() {
         </div>
 
         <a
-          href="/admin/testimoni"
+          href="/admin-dapoer-iboee/testimoni"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#70260D] hover:bg-[#8C3317] text-[#FFB59E] text-xs font-bold transition-all flex-shrink-0 self-start sm:self-auto"
         >
           <span>Kelola Testimoni</span>

@@ -120,7 +120,8 @@ export default function CateringPackages() {
   return (
     <section id="paket" className="py-20 sm:py-28 bg-[#FCFBF9] relative overflow-hidden">
       {/* Decorative background glows */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-[#C83718]/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-[#C83718]/[0.04] rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-20 right-0 w-96 h-96 bg-[#E86326]/[0.03] rounded-full blur-[80px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
@@ -138,33 +139,45 @@ export default function CateringPackages() {
           </p>
 
           {/* Toggle Billing Cycle */}
-          <div className="mt-8 inline-flex items-center p-1.5 bg-[#F0EAE6] rounded-full border border-[#DDD5CE] shadow-inner">
+          <div className="mt-8 inline-flex items-center p-1 bg-[#F0EAE6] rounded-xl border border-[#DDD5CE] shadow-inner">
             <button
               type="button"
               onClick={() => setBillingCycle('mingguan')}
-              className={`px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
+              className={`px-5 sm:px-6 py-2.5 rounded-[10px] text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer flex items-center gap-1.5 ${
                 billingCycle === 'mingguan'
-                  ? 'bg-[#C83718] text-white shadow-md'
+                  ? 'bg-[#C83718] text-white shadow-md shadow-[#C83718]/20'
                   : 'text-[#785A28] hover:text-[#1E2D2F]'
               }`}
             >
-              📅 Mingguan (6 Hari)
+              <Icon name="date_range" size={16} />
+              Mingguan
             </button>
             <button
               type="button"
               onClick={() => setBillingCycle('bulanan')}
-              className={`px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-5 sm:px-6 py-2.5 rounded-[10px] text-xs sm:text-sm font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
                 billingCycle === 'bulanan'
-                  ? 'bg-[#C83718] text-white shadow-md'
+                  ? 'bg-[#C83718] text-white shadow-md shadow-[#C83718]/20'
                   : 'text-[#785A28] hover:text-[#1E2D2F]'
               }`}
             >
-              ⭐ Bulanan (30 Hari)
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 uppercase font-extrabold tracking-wider">
+              <Icon name="calendar_month" size={16} />
+              Bulanan
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-md uppercase font-extrabold tracking-wider ${
+                billingCycle === 'bulanan' ? 'bg-white/25 text-white' : 'bg-[#D1E9CA] text-[#0C2009]'
+              }`}>
                 Hemat
               </span>
             </button>
           </div>
+
+          {/* Savings callout when bulanan */}
+          {billingCycle === 'bulanan' && (
+            <p className="mt-3 text-xs font-bold text-[#246B34] flex items-center gap-1.5 justify-center animate-fade-in">
+              <Icon name="savings" size={16} />
+              Hemat hingga Rp 390.000 per bulan dibanding beli harian!
+            </p>
+          )}
         </div>
 
         {/* 3 Main Packages Grid */}
@@ -172,7 +185,7 @@ export default function CateringPackages() {
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className={`relative rounded-3xl transition-all duration-300 flex flex-col justify-between ${
+              className={`relative rounded-3xl transition-all duration-300 flex flex-col justify-between tactile-press ${
                 pkg.highlight
                   ? 'bg-white border-2 border-[#C83718] shadow-2xl shadow-[#C83718]/15 ring-4 ring-[#FFDBD1]/50 lg:-translate-y-2'
                   : 'bg-white border border-[#DDD5CE] shadow-md hover:shadow-xl'
@@ -234,10 +247,10 @@ export default function CateringPackages() {
               <div className="p-6 sm:p-8 pt-0 space-y-2.5">
                 <a
                   href={`#langganan`}
-                  className={`w-full py-3.5 px-4 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                  className={`w-full py-3.5 px-4 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.97] ${
                     pkg.highlight
-                      ? 'bg-[#C83718] hover:bg-[#8C2C10] text-white shadow-lg shadow-[#C83718]/25 hover:-translate-y-0.5'
-                      : 'bg-[#1E2D2F] hover:bg-black text-white'
+                      ? 'bg-[#C83718] hover:bg-[#8C2C10] text-white shadow-lg shadow-[#C83718]/25'
+                      : 'bg-[#1E2D2F] hover:bg-[#0D1B1D] text-white'
                   }`}
                 >
                   <Icon name="assignment" size={18} />

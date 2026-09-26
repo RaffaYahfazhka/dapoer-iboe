@@ -12,22 +12,22 @@ interface AdminSidebarProps {
 
 const menuItems = [
   {
-    href: '/admin',
+    href: '/admin-dapoer-iboee',
     label: 'Dashboard',
     icon: 'dashboard',
   },
   {
-    href: '/admin/pelanggan',
+    href: '/admin-dapoer-iboee/pelanggan',
     label: 'Pelanggan',
     icon: 'group',
   },
   {
-    href: '/admin/menu',
+    href: '/admin-dapoer-iboee/menu',
     label: 'Menu Mingguan',
     icon: 'restaurant_menu',
   },
   {
-    href: '/admin/testimoni',
+    href: '/admin-dapoer-iboee/testimoni',
     label: 'Testimoni',
     icon: 'reviews',
   },

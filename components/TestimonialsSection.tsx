@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Icon from '@/components/m3/Icon'
-import { TestimonialItem, getStoredTestimonials } from '@/lib/testimonials'
+import { TestimonialItem, INITIAL_TESTIMONIALS, getStoredTestimonials } from '@/lib/testimonials'
 
 export default function TestimonialsSection() {
-  const [items, setItems] = useState<TestimonialItem[]>(() => getStoredTestimonials())
+  const [items, setItems] = useState<TestimonialItem[]>(INITIAL_TESTIMONIALS)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFading, setIsFading] = useState(false)
 
   useEffect(() => {
+    // Load persisted testimonials after client hydration to prevent hydration mismatch
+    setItems(getStoredTestimonials())
+
     const handleUpdate = () => {
       const updated = getStoredTestimonials()
       setItems(updated)

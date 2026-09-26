@@ -191,7 +191,7 @@ export default function CustomerOrderTracker() {
   return (
     <div className="w-full max-w-4xl mx-auto">
       {/* Search & Quick Samples Card */}
-      <div className="bg-[#FCFBF9] rounded-3xl p-5 sm:p-7 border border-[#DDD5CE] shadow-sm mb-6">
+      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#DDD5CE] shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-[#1E2D2F] flex items-center gap-2">
@@ -218,8 +218,8 @@ export default function CustomerOrderTracker() {
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Masukkan No. WhatsApp (contoh: 081234567890) atau Nama..."
-            className="w-full pl-11 pr-10 py-3.5 bg-white border border-[#DDD5CE] rounded-2xl text-sm text-[#1E2D2F] placeholder:text-[#785A28]/60 focus:outline-none focus:border-[#C83718] focus:ring-2 focus:ring-[#C83718]/15 transition-all shadow-inner"
+            placeholder="No. WhatsApp atau Nama Pelanggan..."
+            className="w-full pl-11 pr-10 py-3.5 bg-[#FCFBF9] border border-[#DDD5CE] rounded-xl text-sm text-[#1E2D2F] placeholder:text-[#785A28]/50 focus:outline-none focus:border-[#C83718] focus:ring-2 focus:ring-[#C83718]/15 focus:bg-white transition-all duration-200"
           />
           {searchQuery && (
             <button
@@ -434,7 +434,7 @@ export default function CustomerOrderTracker() {
                         ? 'bg-[#C83718] text-white shadow-lg animate-pulse-ring'
                         : isPast
                         ? 'bg-[#246B34] text-white'
-                        : 'bg-[#DDD5CE] text-[#785A28]'
+                        : 'bg-[#F0EAE6] text-[#785A28]'
                     }`}
                   >
                     {isPast ? (

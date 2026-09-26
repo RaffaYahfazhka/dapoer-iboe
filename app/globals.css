@@ -120,6 +120,10 @@ html {
   background: rgba(200, 55, 24, 0.45);
 }
 
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* ═══ Animations ═══ */
 
 @keyframes fadeInUp {
@@ -142,6 +146,17 @@ html {
   from {
     opacity: 0;
     transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
   }
   to {
     opacity: 1;
@@ -185,6 +200,36 @@ html {
   50% { transform: translateY(-8px); }
 }
 
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(200, 55, 24, 0.25), 0 0 60px rgba(200, 55, 24, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(200, 55, 24, 0.4), 0 0 80px rgba(200, 55, 24, 0.2);
+  }
+}
+
+@keyframes subtle-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes slide-indicator {
+  from { opacity: 0; transform: scaleX(0.6); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes hero-float-1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-12px) rotate(1deg); }
+  66% { transform: translateY(4px) rotate(-0.5deg); }
+}
+
+@keyframes hero-float-2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(-1.5deg); }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -197,6 +242,10 @@ html {
   animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.animate-slide-in-right {
+  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .animate-slide-up-modal {
   animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -207,6 +256,22 @@ html {
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-hero-float-1 {
+  animation: hero-float-1 6s ease-in-out infinite;
+}
+
+.animate-hero-float-2 {
+  animation: hero-float-2 5s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: subtle-breathe 4s ease-in-out infinite;
 }
 
 /* Stagger children animation */
@@ -241,4 +306,33 @@ html {
 .touch-target {
   min-height: 48px;
   min-width: 48px;
+}
+
+/* ═══ Interactive tactile micro-interactions ═══ */
+
+.tactile-press {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+}
+.tactile-press:hover {
+  transform: translateY(-2px);
+}
+.tactile-press:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Day tab active indicator */
+.day-tab-active {
+  position: relative;
+}
+.day-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #C83718;
+  animation: slide-indicator 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

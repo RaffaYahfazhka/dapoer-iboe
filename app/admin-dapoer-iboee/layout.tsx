@@ -12,10 +12,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
 
   const navTabs = [
-    { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/admin/pelanggan', label: 'Pelanggan', icon: 'group' },
-    { href: '/admin/menu', label: 'Menu', icon: 'restaurant_menu' },
-    { href: '/admin/testimoni', label: 'Testi', icon: 'reviews' },
+    { href: '/admin-dapoer-iboee', label: 'Dashboard', icon: 'dashboard' },
+    { href: '/admin-dapoer-iboee/pelanggan', label: 'Pelanggan', icon: 'group' },
+    { href: '/admin-dapoer-iboee/menu', label: 'Menu', icon: 'restaurant_menu' },
+    { href: '/admin-dapoer-iboee/testimoni', label: 'Testi', icon: 'reviews' },
     { href: '/', label: 'Web', icon: 'storefront' },
   ]
 
