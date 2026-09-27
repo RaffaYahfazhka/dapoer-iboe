@@ -68,11 +68,23 @@ export default function AdminDashboard() {
     setPendingCount(data.pendingCount)
   }, [loadData])
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh on delivery or pelanggan updates and every 30 seconds
   useEffect(() => {
     if (!isClient) return
+
+    const handleDataUpdate = () => {
+      refreshData()
+    }
+
+    window.addEventListener('dapoer_iboe_delivery_updated', handleDataUpdate)
+    window.addEventListener('dapoer_iboe_pelanggan_updated', handleDataUpdate)
     const interval = setInterval(refreshData, 30000)
-    return () => clearInterval(interval)
+
+    return () => {
+      window.removeEventListener('dapoer_iboe_delivery_updated', handleDataUpdate)
+      window.removeEventListener('dapoer_iboe_pelanggan_updated', handleDataUpdate)
+      clearInterval(interval)
+    }
   }, [isClient, refreshData])
 
   if (!isClient || loading) {

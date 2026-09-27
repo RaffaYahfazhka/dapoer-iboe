@@ -10,6 +10,7 @@ import {
   bulkUpdatePelangganStatus,
   bulkDeletePelanggan,
   seedDummyPelanggan,
+  invalidatePelangganCache,
 } from '@/lib/store'
 import { Pelanggan, JadwalType, PelangganStatus } from '@/lib/types'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -164,8 +165,8 @@ export default function PelangganPage() {
   // DATA LOAD & AUTO-SYNC
   // ========================
 
-  const loadData = useCallback(async () => {
-    const list = await getPelangganList()
+  const loadData = useCallback(async (forceFresh = false) => {
+    const list = await getPelangganList(forceFresh)
     return list
   }, [])
 
@@ -185,7 +186,8 @@ export default function PelangganPage() {
   }, [isClient, loadData])
 
   const refreshData = useCallback(async () => {
-    const list = await loadData()
+    invalidatePelangganCache()
+    const list = await loadData(true)
     setPelangganList(list)
     setSelectedIds([])
   }, [loadData])
@@ -194,7 +196,8 @@ export default function PelangganPage() {
   useEffect(() => {
     if (!isClient) return
     const handleUpdate = () => {
-      loadData().then((list) => setPelangganList(list))
+      invalidatePelangganCache()
+      loadData(true).then((list) => setPelangganList(list))
     }
     window.addEventListener('dapoer_iboe_pelanggan_updated', handleUpdate)
     return () => {

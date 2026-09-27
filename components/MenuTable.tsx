@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useSyncExternalStore } from 'react'
-import { getMenu } from '@/lib/store'
+import { getMenu, getLocalMenu } from '@/lib/store'
 import { MenuItem } from '@/lib/types'
 import Icon from '@/components/m3/Icon'
 
@@ -25,18 +25,28 @@ export default function MenuTable() {
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeDay, setActiveDay] = useState(() => {
-    const jsDay = new Date().getDay()
-    return DAY_MAP[jsDay] || 'Senin'
-  })
+  const [activeDay, setActiveDay] = useState('Senin')
 
   useEffect(() => {
     if (!isClient) return
     let cancelled = false
     const fetchMenu = () => {
+      // Set today's day
+      const jsDay = new Date().getDay()
+      if (DAY_MAP[jsDay]) {
+        setActiveDay(DAY_MAP[jsDay])
+      }
+
+      // First ensure local cache is loaded
+      const local = getLocalMenu()
+      if (local?.items?.length) {
+        setMenuItems(local.items)
+        setLoading(false)
+      }
+
       getMenu()
         .then((menu) => {
-          if (!cancelled) setMenuItems(menu?.items || [])
+          if (!cancelled && menu?.items) setMenuItems(menu.items)
         })
         .catch((err) => {
           console.warn('Failed to load menu in MenuTable:', err)

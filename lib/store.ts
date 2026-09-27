@@ -102,6 +102,7 @@ export function getLocalPelanggan(): Pelanggan[] {
 export function saveLocalPelanggan(list: Pelanggan[]): void {
   if (typeof window === 'undefined') return
   try {
+    invalidatePelangganCache()
     localStorage.setItem(STORAGE_KEY_PELANGGAN, JSON.stringify(list))
     window.dispatchEvent(new CustomEvent('dapoer_iboe_pelanggan_updated'))
   } catch (err) {
@@ -135,7 +136,20 @@ export function saveLocalDeliveries(items: DeliveryRecord[]): void {
 // PELANGGAN
 // ========================
 
-export async function getPelangganList(): Promise<Pelanggan[]> {
+// Cache in-memory for getPelangganList
+let memoryPelangganCache: { data: Pelanggan[]; timestamp: number } | null = null
+const PELANGGAN_CACHE_TTL = 2 * 60 * 1000 // 2 menit
+
+export function invalidatePelangganCache(): void {
+  memoryPelangganCache = null
+}
+
+export async function getPelangganList(forceFresh = false): Promise<Pelanggan[]> {
+  const now = Date.now()
+  if (!forceFresh && memoryPelangganCache && now - memoryPelangganCache.timestamp < PELANGGAN_CACHE_TTL) {
+    return memoryPelangganCache.data
+  }
+
   try {
     const { data, error } = await supabase
       .from('pelanggan')
@@ -147,13 +161,16 @@ export async function getPelangganList(): Promise<Pelanggan[]> {
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY_PELANGGAN, JSON.stringify(mapped))
       }
+      memoryPelangganCache = { data: mapped, timestamp: now }
       return mapped
     }
   } catch (err) {
     console.warn('Error fetching from Supabase, using local cache:', err)
   }
 
-  return getLocalPelanggan()
+  const local = getLocalPelanggan()
+  memoryPelangganCache = { data: local, timestamp: now }
+  return local
 }
 
 export async function seedDummyPelanggan(): Promise<void> {
@@ -436,7 +453,7 @@ export async function generateDailyDeliveries(tanggal: string): Promise<Delivery
           status: 'belum',
           step: 2,
           updatedAt: new Date().toISOString(),
-          driverNama: 'Pak Joko (Kurir Dapoer Iboe)',
+          driverNama: '',
           driverHp: '081299887766',
           estimatedTime: estTime,
         })
@@ -450,7 +467,7 @@ export async function generateDailyDeliveries(tanggal: string): Promise<Delivery
           jadwal,
           status: 'belum',
           step: 2,
-          driver_nama: 'Pak Joko (Kurir Dapoer Iboe)',
+          driver_nama: '',
           driver_hp: '081299887766',
           estimated_time: estTime,
         })
@@ -757,9 +774,16 @@ export async function getTodayStats(): Promise<{
 
 // ========================
 // MENU
-// ========================
+// Cache in-memory for getMenu
+let memoryMenuCache: { data: WeeklyMenu; timestamp: number } | null = null
+const MENU_CACHE_TTL = 5 * 60 * 1000 // 5 menit
 
 export async function getMenu(): Promise<WeeklyMenu> {
+  const now = Date.now()
+  if (memoryMenuCache && now - memoryMenuCache.timestamp < MENU_CACHE_TTL) {
+    return memoryMenuCache.data
+  }
+
   try {
     const { data, error } = await supabase
       .from('menu_items')
@@ -777,16 +801,20 @@ export async function getMenu(): Promise<WeeklyMenu> {
         updatedAt: data[0]?.updated_at ?? new Date().toISOString(),
       }
       saveLocalMenu(menu)
+      memoryMenuCache = { data: menu, timestamp: now }
       return menu
     }
   } catch (err) {
     console.warn('Supabase fetch menu failed, using local cache:', err)
   }
 
-  return getLocalMenu()
+  const local = getLocalMenu()
+  memoryMenuCache = { data: local, timestamp: now }
+  return local
 }
 
 export async function updateMenuItem(hari: string, jadwal: 'pagi' | 'siang' | 'malam', menu: string[]): Promise<void> {
+  memoryMenuCache = null // Invalidate cache immediately on update
   const currentMenu = getLocalMenu()
   const updatedItems = currentMenu.items.map(item => {
     if (item.hari === hari) {

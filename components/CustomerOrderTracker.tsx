@@ -3,10 +3,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Icon from '@/components/m3/Icon'
 import { DeliveryRecord, DeliveryStep } from '@/lib/types'
+import { supabase } from '@/lib/supabase'
 import {
   getDeliveriesByCustomerQuery,
   getCustomerDeliveryHistory,
   getPelangganList,
+  getLocalPelanggan,
+  getLocalDeliveries,
   generateDailyDeliveries,
   formatDate,
   formatDateDisplay,
@@ -66,29 +69,53 @@ export default function CustomerOrderTracker() {
   const [historyRecords, setHistoryRecords] = useState<DeliveryRecord[]>([])
   const [historyAccordionOpen, setHistoryAccordionOpen] = useState(false)
   const [todayMenu, setTodayMenu] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Initial data load
+  // Initial data load after hydration (prevents SSR-Client mismatch)
   useEffect(() => {
-    const loadInitialData = async () => {
+    let cancelled = false
+    const initTracker = async () => {
+      // 1. Immediately read local cache on client mount
+      const localPelanggans = getLocalPelanggan().filter((p) => p.status === 'aktif')
+      const initialPhone = localPelanggans[0]?.whatsapp || ''
+
+      if (localPelanggans.length > 0) {
+        setQuickSamples(
+          localPelanggans.slice(0, 3).map((p) => ({ nama: p.nama, hp: p.whatsapp }))
+        )
+        setSearchQuery(initialPhone)
+
+        const today = formatDate(new Date())
+        const localDelivs = getLocalDeliveries().filter(
+          (d) => d.pelangganWhatsapp === initialPhone && d.tanggal === today
+        )
+        if (localDelivs.length > 0) {
+          setMatchedRecords(localDelivs)
+          setActiveRecord(localDelivs[0])
+        }
+      }
+
+      // 2. Fetch fresh data in background without blocking
       try {
         const today = formatDate(new Date())
-        await generateDailyDeliveries(today)
+        generateDailyDeliveries(today).catch(() => {})
 
         const pelanggans = await getPelangganList()
+        if (cancelled) return
         const aktifPelanggans = pelanggans.filter((p) => p.status === 'aktif')
 
         setQuickSamples(
           aktifPelanggans.slice(0, 3).map((p) => ({ nama: p.nama, hp: p.whatsapp }))
         )
 
-        if (aktifPelanggans.length > 0) {
-          const defaultQuery = aktifPelanggans[0].whatsapp
-          setSearchQuery(defaultQuery)
+        const targetQuery = initialPhone || aktifPelanggans[0]?.whatsapp || ''
+        if (targetQuery) {
+          setSearchQuery(targetQuery)
           const [records, history] = await Promise.all([
-            getDeliveriesByCustomerQuery(defaultQuery),
-            getCustomerDeliveryHistory(defaultQuery),
+            getDeliveriesByCustomerQuery(targetQuery),
+            getCustomerDeliveryHistory(targetQuery),
           ])
+          if (cancelled) return
           setMatchedRecords(records)
           setHistoryRecords(history)
           if (records.length > 0) {
@@ -97,12 +124,62 @@ export default function CustomerOrderTracker() {
         }
       } catch (err) {
         console.error('Error loading tracker data:', err)
-      } finally {
-        setIsLoading(false)
       }
     }
-    loadInitialData()
+
+    initTracker()
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  // Real-time synchronization: Supabase Postgres Changes & Local Storage Events
+  useEffect(() => {
+    // 1. Listen for local storage changes dispatched from admin portal
+    const handleLocalUpdate = () => {
+      if (searchQuery.trim()) {
+        getDeliveriesByCustomerQuery(searchQuery).then((records) => {
+          setMatchedRecords(records)
+          if (records.length > 0) {
+            setActiveRecord((prev) => {
+              const updated = records.find((r) => r.id === prev?.id) || records[0]
+              return updated
+            })
+          }
+        })
+        getCustomerDeliveryHistory(searchQuery).then(setHistoryRecords)
+      }
+    }
+    window.addEventListener('dapoer_iboe_delivery_updated', handleLocalUpdate)
+
+    // 2. Realtime listener directly from Supabase channel
+    const channel = supabase
+      .channel('public:delivery_records_tracker')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'delivery_records' },
+        (payload) => {
+          if (searchQuery.trim()) {
+            getDeliveriesByCustomerQuery(searchQuery).then((records) => {
+              setMatchedRecords(records)
+              if (records.length > 0) {
+                setActiveRecord((prev) => {
+                  const updated = records.find((r) => r.id === prev?.id) || records[0]
+                  return updated
+                })
+              }
+            })
+            getCustomerDeliveryHistory(searchQuery).then(setHistoryRecords)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      window.removeEventListener('dapoer_iboe_delivery_updated', handleLocalUpdate)
+      supabase.removeChannel(channel)
+    }
+  }, [searchQuery])
 
   const activeRecordShift = activeRecord?.jadwal || 'siang'
 
@@ -481,9 +558,6 @@ export default function CustomerOrderTracker() {
                         <div className="flex items-center gap-2">
                           <Icon name="sports_motorsports" size={20} className="text-[#C83718]" />
                           <div>
-                            <p className="text-xs font-bold text-[#1E2D2F]">
-                              {activeRecord.driverNama || 'Pak Joko (Kurir Dapoer Iboe)'}
-                            </p>
                             <p className="text-[11px] text-[#785A28]">
                               Estimasi Tiba: {activeRecord.estimatedTime || '15 - 30 Menit'}
                             </p>
@@ -605,11 +679,6 @@ export default function CustomerOrderTracker() {
                             <Icon name="check_circle" size={14} filled />
                             Terkirim
                           </span>
-                          {item.driverNama && (
-                            <span className="text-[#785A28] text-[11px]">
-                              ({item.driverNama})
-                            </span>
-                          )}
                         </div>
                       </div>
                     ))}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Icon from '@/components/m3/Icon'
 import { TestimonialItem, INITIAL_TESTIMONIALS, getStoredTestimonials } from '@/lib/testimonials'
 
@@ -123,12 +124,16 @@ export default function TestimonialsSection() {
           <div className="lg:col-span-7 xl:col-span-8 flex">
             <article className="relative w-full rounded-3xl overflow-hidden min-h-[500px] md:min-h-[580px] shadow-2xl flex flex-col justify-between border border-[#1E2D2F]/10 group">
               {/* Background Dish Image */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={current.bgImage}
-                alt={current.dishName}
-                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 duration-700 transition-transform pointer-events-none"
-              />
+              <div className="absolute inset-0 pointer-events-none">
+                <Image
+                  src={current.bgImage}
+                  alt={current.dishName}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 65vw"
+                  className="object-cover object-center group-hover:scale-105 duration-700 transition-transform"
+                  priority={currentIndex === 0}
+                />
+              </div>
 
               {/* Multi-stage dark gradient overlays for legibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30 pointer-events-none" />
@@ -166,13 +171,16 @@ export default function TestimonialsSection() {
                       isFading ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={current.avatarImage}
-                      alt={current.authorName}
-                      referrerPolicy="no-referrer"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white/90 shadow-md flex-shrink-0 bg-white"
-                    />
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/90 shadow-md flex-shrink-0 bg-white">
+                      <Image
+                        src={current.avatarImage}
+                        alt={current.authorName}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
                     <div>
                       <h3 className="text-white font-bold text-base tracking-wide">
                         {current.authorName}
@@ -228,12 +236,15 @@ export default function TestimonialsSection() {
                       }`}
                     >
                       {/* Thumbnail */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.bgImage}
-                        alt={item.dishName}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow-sm"
-                      />
+                      <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-stone-100">
+                        <Image
+                          src={item.bgImage}
+                          alt={item.dishName}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1 mb-0.5">
                           <h4

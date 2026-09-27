@@ -47,12 +47,16 @@ CREATE TABLE IF NOT EXISTS menu_items (
 );
 
 -- ============================================
--- Indexes
+-- ============================================
+-- Indexes for Search & Filtering Performance
 -- ============================================
 
 CREATE INDEX IF NOT EXISTS idx_delivery_tanggal ON delivery_records(tanggal);
 CREATE INDEX IF NOT EXISTS idx_delivery_pelanggan ON delivery_records(pelanggan_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_whatsapp ON delivery_records(pelanggan_whatsapp);
+CREATE INDEX IF NOT EXISTS idx_delivery_nama ON delivery_records(pelanggan_nama);
 CREATE INDEX IF NOT EXISTS idx_pelanggan_status ON pelanggan(status);
+CREATE INDEX IF NOT EXISTS idx_pelanggan_whatsapp ON pelanggan(whatsapp);
 
 -- ============================================
 -- Auto-update updated_at trigger
@@ -87,13 +91,34 @@ ALTER TABLE delivery_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE menu_items ENABLE ROW LEVEL SECURITY;
 
 -- Pelanggan policies
+DROP POLICY IF EXISTS "Allow anon full access on pelanggan" ON pelanggan;
 CREATE POLICY "Allow anon full access on pelanggan" ON pelanggan
   FOR ALL USING (true) WITH CHECK (true);
 
 -- Delivery Records policies
+DROP POLICY IF EXISTS "Allow anon full access on delivery_records" ON delivery_records;
 CREATE POLICY "Allow anon full access on delivery_records" ON delivery_records
   FOR ALL USING (true) WITH CHECK (true);
 
 -- Menu Items policies
+DROP POLICY IF EXISTS "Allow anon full access on menu_items" ON menu_items;
 CREATE POLICY "Allow anon full access on menu_items" ON menu_items
   FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================
+-- Supabase Realtime Publication
+-- Aktifkan broadcast realtime agar status pengiriman
+-- langsung terupdate di halaman pelacak pelanggan
+-- ============================================
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND tablename = 'delivery_records'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE delivery_records;
+  END IF;
+END $$;
+

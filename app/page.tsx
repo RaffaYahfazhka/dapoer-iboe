@@ -19,22 +19,16 @@ export default function HomePage() {
         id="beranda"
         className="relative min-h-screen flex items-center overflow-hidden bg-[#1E2D2F]"
       >
-        {/* Layered ambient glows */}
+        {/* Layered ambient glows (GPU accelerated) */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none will-change-transform"
           style={{
-            backgroundImage: `radial-gradient(ellipse 60% 50% at 15% 50%, rgba(200, 55, 24, 0.2) 0%, transparent 70%),
-                             radial-gradient(ellipse 50% 60% at 85% 35%, rgba(232, 99, 38, 0.12) 0%, transparent 70%),
-                             radial-gradient(ellipse 40% 40% at 50% 90%, rgba(200, 55, 24, 0.08) 0%, transparent 60%)`,
+            backgroundImage: `radial-gradient(ellipse 60% 50% at 15% 50%, rgba(200, 55, 24, 0.18) 0%, transparent 70%),
+                             radial-gradient(ellipse 50% 60% at 85% 35%, rgba(232, 99, 38, 0.1) 0%, transparent 70%)`,
           }}
         />
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#C83718]/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#E86326]/[0.06] rounded-full blur-[120px] pointer-events-none" />
-
-        {/* Fine grain texture overlay */}
-        <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
-          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'a\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23a)\'/%3E%3C/svg%3E")' }}
-        />
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#C83718]/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[420px] h-[420px] bg-[#E86326]/[0.05] rounded-full blur-[90px] pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-28 sm:py-36 lg:py-0 lg:min-h-screen lg:flex lg:items-center">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
@@ -169,10 +163,17 @@ export default function HomePage() {
         {/* Scroll indicator */}
         <a
           href="#paket"
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/30 hover:text-white/60 transition-colors animate-bounce"
+          onClick={(e) => {
+            e.preventDefault()
+            const target = document.getElementById('paket')
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 p-2 text-white/40 hover:text-white transition-all duration-300 animate-bounce cursor-pointer flex items-center justify-center rounded-full hover:bg-white/[0.08]"
           aria-label="Scroll ke daftar paket"
         >
-          <Icon name="expand_more" size={28} />
+          <Icon name="expand_more" size={32} />
         </a>
       </section>
 
