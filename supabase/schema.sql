@@ -82,6 +82,40 @@ CREATE OR REPLACE TRIGGER menu_items_updated_at
   BEFORE UPDATE ON menu_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- 4. Tabel Testimonials
+CREATE TABLE IF NOT EXISTS testimonials (
+  id TEXT PRIMARY KEY,
+  badge TEXT NOT NULL,
+  dish_name TEXT NOT NULL,
+  quote TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  author_role TEXT NOT NULL,
+  bg_image TEXT NOT NULL,
+  avatar_image TEXT NOT NULL,
+  rating INTEGER NOT NULL DEFAULT 5,
+  featured BOOLEAN DEFAULT true,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================
+-- Indexes for Search & Filtering Performance
+-- ============================================
+
+CREATE INDEX IF NOT EXISTS idx_delivery_tanggal ON delivery_records(tanggal);
+CREATE INDEX IF NOT EXISTS idx_delivery_pelanggan ON delivery_records(pelanggan_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_whatsapp ON delivery_records(pelanggan_whatsapp);
+CREATE INDEX IF NOT EXISTS idx_delivery_nama ON delivery_records(pelanggan_nama);
+CREATE INDEX IF NOT EXISTS idx_pelanggan_status ON pelanggan(status);
+CREATE INDEX IF NOT EXISTS idx_pelanggan_whatsapp ON pelanggan(whatsapp);
+CREATE INDEX IF NOT EXISTS idx_testimonials_date ON testimonials(date);
+CREATE INDEX IF NOT EXISTS idx_testimonials_rating ON testimonials(rating);
+
+CREATE OR REPLACE TRIGGER testimonials_updated_at
+  BEFORE UPDATE ON testimonials
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ============================================
 -- Row Level Security (RLS) — Open Access (anon)
 -- ============================================
@@ -89,6 +123,7 @@ CREATE OR REPLACE TRIGGER menu_items_updated_at
 ALTER TABLE pelanggan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE delivery_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE menu_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
 
 -- Pelanggan policies
 DROP POLICY IF EXISTS "Allow anon full access on pelanggan" ON pelanggan;
@@ -105,10 +140,15 @@ DROP POLICY IF EXISTS "Allow anon full access on menu_items" ON menu_items;
 CREATE POLICY "Allow anon full access on menu_items" ON menu_items
   FOR ALL USING (true) WITH CHECK (true);
 
+-- Testimonials policies
+DROP POLICY IF EXISTS "Allow anon full access on testimonials" ON testimonials;
+CREATE POLICY "Allow anon full access on testimonials" ON testimonials
+  FOR ALL USING (true) WITH CHECK (true);
+
 -- ============================================
 -- Supabase Realtime Publication
--- Aktifkan broadcast realtime agar status pengiriman
--- langsung terupdate di halaman pelacak pelanggan
+-- Aktifkan broadcast realtime agar status pengiriman & testimoni
+-- langsung terupdate di halaman pelacak dan beranda
 -- ============================================
 
 DO $$
@@ -119,6 +159,14 @@ BEGIN
     AND tablename = 'delivery_records'
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE delivery_records;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND tablename = 'testimonials'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE testimonials;
   END IF;
 END $$;
 

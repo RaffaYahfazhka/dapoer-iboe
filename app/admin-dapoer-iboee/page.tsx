@@ -9,6 +9,7 @@ import {
   formatDateDisplay,
   getTodayStats,
 } from '@/lib/store'
+import { getTestimonialsList, TestimonialItem } from '@/lib/testimonials'
 import { DeliveryRecord, Pelanggan } from '@/lib/types'
 import SummaryCard from '@/components/SummaryCard'
 import DeliveryTracker from '@/components/DeliveryTracker'
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ total: 0, belum: 0, sedang: 0, sudah: 0 })
   const [pelangganCount, setPelangganCount] = useState(0)
   const [pendingCount, setPendingCount] = useState(0)
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
@@ -35,12 +37,14 @@ export default function AdminDashboard() {
     const allDeliveries = await getDeliveriesByDate(selectedDate)
     const todayStats = await getTodayStats()
     const pelangganList = await getPelangganList()
+    const testiList = await getTestimonialsList()
 
     return {
       deliveries: allDeliveries.length > 0 ? allDeliveries : records,
       stats: todayStats,
       aktifCount: pelangganList.filter((p: Pelanggan) => p.status === 'aktif').length,
       pendingCount: pelangganList.filter((p: Pelanggan) => p.status === 'pending').length,
+      testimonials: testiList,
     }
   }, [selectedDate])
 
@@ -54,6 +58,7 @@ export default function AdminDashboard() {
         setStats(data.stats)
         setPelangganCount(data.aktifCount)
         setPendingCount(data.pendingCount)
+        setTestimonials(data.testimonials)
         setLoading(false)
       }
     })
@@ -66,6 +71,7 @@ export default function AdminDashboard() {
     setStats(data.stats)
     setPelangganCount(data.aktifCount)
     setPendingCount(data.pendingCount)
+    setTestimonials(data.testimonials)
   }, [loadData])
 
   // Auto-refresh on delivery or pelanggan updates and every 30 seconds
@@ -78,11 +84,13 @@ export default function AdminDashboard() {
 
     window.addEventListener('dapoer_iboe_delivery_updated', handleDataUpdate)
     window.addEventListener('dapoer_iboe_pelanggan_updated', handleDataUpdate)
+    window.addEventListener('dapoer_iboe_testimonials_updated', handleDataUpdate)
     const interval = setInterval(refreshData, 30000)
 
     return () => {
       window.removeEventListener('dapoer_iboe_delivery_updated', handleDataUpdate)
       window.removeEventListener('dapoer_iboe_pelanggan_updated', handleDataUpdate)
+      window.removeEventListener('dapoer_iboe_testimonials_updated', handleDataUpdate)
       clearInterval(interval)
     }
   }, [isClient, refreshData])
@@ -100,6 +108,13 @@ export default function AdminDashboard() {
 
   const progress = stats.total > 0 ? Math.round((stats.sudah / stats.total) * 100) : 0
   const isToday = selectedDate === formatDate(new Date())
+  const avgRating =
+    testimonials.length > 0
+      ? (
+          testimonials.reduce((acc: number, t: TestimonialItem) => acc + (t.rating || 5), 0) /
+          testimonials.length
+        ).toFixed(1)
+      : '5.0'
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -252,18 +267,27 @@ export default function AdminDashboard() {
         <DeliveryTracker records={deliveries} onUpdate={refreshData} />
       </div>
 
-      {/* Quick Testimonial Summary Card */}
+      {/* Quick Testimonial Summary Card with Live Stats */}
       <div className="bg-gradient-to-r from-[#1E2022] to-[#251814] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-[#3A3E43] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#70260D] text-[#FFB59E] flex items-center justify-center flex-shrink-0 shadow-md">
             <Icon name="reviews" size={24} />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-[#E1E3E5]">
-              Ulasan & Testimoni Pelanggan
-            </h3>
-            <p className="text-xs text-[#8E9196] mt-0.5">
-              Kelola rating bintang, kutipan pelanggan, dan foto masakan yang tampil di beranda
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm sm:text-base font-bold text-[#E1E3E5]">
+                Ulasan & Testimoni Pelanggan
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFB59E]/15 text-[#FFB59E] border border-[#FFB59E]/30">
+                {testimonials.length} Testimoni Aktif
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/15 text-amber-400 border border-amber-400/30 flex items-center gap-1">
+                <Icon name="star" size={12} filled />
+                {avgRating} Rata-rata
+              </span>
+            </div>
+            <p className="text-xs text-[#8E9196] mt-1">
+              Tersinkron langsung dengan database Supabase & tampil live di beranda website
             </p>
           </div>
         </div>

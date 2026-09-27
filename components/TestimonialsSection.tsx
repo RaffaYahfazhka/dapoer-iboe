@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Icon from '@/components/m3/Icon'
-import { TestimonialItem, INITIAL_TESTIMONIALS, getStoredTestimonials } from '@/lib/testimonials'
+import {
+  TestimonialItem,
+  INITIAL_TESTIMONIALS,
+  getTestimonialsList,
+  getStoredTestimonials,
+} from '@/lib/testimonials'
+import { supabase } from '@/lib/supabase'
 
 export default function TestimonialsSection() {
   const [items, setItems] = useState<TestimonialItem[]>(INITIAL_TESTIMONIALS)
@@ -11,18 +17,46 @@ export default function TestimonialsSection() {
   const [isFading, setIsFading] = useState(false)
 
   useEffect(() => {
-    // Load persisted testimonials after client hydration to prevent hydration mismatch
+    // 1. Immediately hydrate with cached testimonials
     setItems(getStoredTestimonials())
 
+    // 2. Fetch fresh testimonials from Supabase / server
+    let cancelled = false
+    getTestimonialsList(true).then((freshList) => {
+      if (!cancelled && freshList && freshList.length > 0) {
+        setItems(freshList)
+      }
+    })
+
     const handleUpdate = () => {
-      const updated = getStoredTestimonials()
-      setItems(updated)
+      getTestimonialsList().then((updated) => {
+        if (!cancelled && updated && updated.length > 0) {
+          setItems(updated)
+        }
+      })
     }
+
+    // 3. Listen to local custom event and storage event
     window.addEventListener('dapoer_iboe_testimonials_updated', handleUpdate)
     window.addEventListener('storage', handleUpdate)
+
+    // 4. Supabase Realtime Subscription for live updates across devices
+    const channel = supabase
+      .channel('public:testimonials')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'testimonials' },
+        () => {
+          handleUpdate()
+        }
+      )
+      .subscribe()
+
     return () => {
+      cancelled = true
       window.removeEventListener('dapoer_iboe_testimonials_updated', handleUpdate)
       window.removeEventListener('storage', handleUpdate)
+      supabase.removeChannel(channel)
     }
   }, [])
 

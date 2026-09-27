@@ -7,10 +7,14 @@ import FilterChips, { FilterOption } from '@/components/m3/FilterChips'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import {
   TestimonialItem,
+  getTestimonialsList,
+  addTestimonial,
+  updateTestimonial,
+  deleteTestimonial,
+  resetTestimonialsToDefault,
   getStoredTestimonials,
-  saveStoredTestimonials,
-  INITIAL_TESTIMONIALS,
 } from '@/lib/testimonials'
+import { supabase } from '@/lib/supabase'
 import { validateImageFile, compressImageFile } from '@/lib/image-utils'
 
 const DEFAULT_AVATAR =
@@ -27,8 +31,15 @@ export default function AdminTestimoniPage() {
 
   const [items, setItems] = useState<TestimonialItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [ratingFilter, setRatingFilter] = useState('all')
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(null), 3500)
+  }
 
   // Modal form states
   const [modalOpen, setModalOpen] = useState(false)
@@ -63,18 +74,52 @@ export default function AdminTestimoniPage() {
   const [isProcessingBg, setIsProcessingBg] = useState(false)
   const [isProcessingAvatar, setIsProcessingAvatar] = useState(false)
 
+  // Fetch testimonials on mount with instant cache load followed by fresh Supabase fetch
   useEffect(() => {
     if (!isClient) return
     let cancelled = false
-    Promise.resolve().then(() => {
-      if (!cancelled) {
-        const loaded = getStoredTestimonials()
-        setItems(loaded)
-        setLoading(false)
+
+    // 1. Initial cached render
+    const cached = getStoredTestimonials()
+    setItems(cached)
+    setLoading(false)
+
+    // 2. Fetch fresh from DB
+    getTestimonialsList(true).then((fresh) => {
+      if (!cancelled && fresh && fresh.length > 0) {
+        setItems(fresh)
       }
     })
+
+    const handleUpdate = () => {
+      getTestimonialsList().then((data) => {
+        if (!cancelled && data) {
+          setItems(data)
+        }
+      })
+    }
+
+    // 3. Listen to local and storage events
+    window.addEventListener('dapoer_iboe_testimonials_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+
+    // 4. Supabase Realtime Subscription
+    const channel = supabase
+      .channel('admin:testimonials')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'testimonials' },
+        () => {
+          handleUpdate()
+        }
+      )
+      .subscribe()
+
     return () => {
       cancelled = true
+      window.removeEventListener('dapoer_iboe_testimonials_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+      supabase.removeChannel(channel)
     }
   }, [isClient])
 
@@ -208,41 +253,59 @@ export default function AdminTestimoniPage() {
     setModalOpen(true)
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.dishName.trim() || !formData.authorName.trim() || !formData.quote.trim()) {
       alert('Mohon lengkapi nama hidangan, nama pelanggan, dan ulasan testimoni.')
       return
     }
 
-    let nextItems: TestimonialItem[]
-    if (editingItem) {
-      nextItems = items.map((t) =>
-        t.id === editingItem.id ? { ...formData, id: editingItem.id } : t
-      )
-    } else {
-      const newItem: TestimonialItem = {
-        ...formData,
-        id: `testi-${Date.now()}`,
+    try {
+      setSaving(true)
+      if (editingItem) {
+        await updateTestimonial(editingItem.id, formData)
+        showToast('Berhasil memperbarui ulasan testimoni!')
+      } else {
+        await addTestimonial(formData)
+        showToast('Berhasil menambahkan testimoni baru!')
       }
-      nextItems = [newItem, ...items]
+      const updated = await getTestimonialsList(true)
+      setItems(updated)
+      setModalOpen(false)
+    } catch (err) {
+      console.error('Error saving testimonial:', err)
+      showToast('Gagal menyimpan ulasan ke database.')
+    } finally {
+      setSaving(false)
     }
-
-    setItems(nextItems)
-    saveStoredTestimonials(nextItems)
-    setModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    const nextItems = items.filter((t) => t.id !== id)
-    setItems(nextItems)
-    saveStoredTestimonials(nextItems)
-    setDeleteConfirm({ open: false, id: '', name: '' })
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTestimonial(id)
+      const updated = await getTestimonialsList(true)
+      setItems(updated)
+      setDeleteConfirm({ open: false, id: '', name: '' })
+      showToast('Testimoni berhasil dihapus!')
+    } catch (err) {
+      console.error('Error deleting testimonial:', err)
+      showToast('Gagal menghapus testimoni.')
+    }
   }
 
-  const handleResetToDefault = () => {
-    setItems(INITIAL_TESTIMONIALS)
-    saveStoredTestimonials(INITIAL_TESTIMONIALS)
+  const handleResetToDefault = async () => {
+    if (!confirm('Apakah Anda yakin ingin mereset testimoni kembali ke 4 testimoni awal?')) return
+    try {
+      setLoading(true)
+      const resetted = await resetTestimonialsToDefault()
+      setItems(resetted)
+      showToast('Testimoni berhasil direset ke data default!')
+    } catch (err) {
+      console.error('Error resetting testimonials:', err)
+      showToast('Gagal mereset data testimoni.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!isClient || loading) {
@@ -256,8 +319,23 @@ export default function AdminTestimoniPage() {
     )
   }
 
+  const avgRating =
+    items.length > 0
+      ? (
+          items.reduce((acc, t) => acc + (t.rating || 5), 0) / items.length
+        ).toFixed(1)
+      : '5.0'
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-[#1E2D2F] border border-[#FFB59E]/40 text-[#E1E3E5] px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xl flex items-center gap-2.5 animate-fade-in">
+          <Icon name="check_circle" size={18} className="text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -265,7 +343,7 @@ export default function AdminTestimoniPage() {
             Manajemen Testimoni & Review
           </h1>
           <p className="text-[#8E9196] text-xs sm:text-sm mt-1">
-            Kelola ulasan kepuasan pelanggan yang tampil di halaman beranda website
+            Kelola ulasan kepuasan pelanggan yang tersinkron langsung ke database dan tampil di halaman beranda
           </p>
         </div>
 
@@ -309,7 +387,7 @@ export default function AdminTestimoniPage() {
           </div>
           <div>
             <p className="text-[11px] text-[#8E9196] font-medium">Rating Rata-rata</p>
-            <p className="text-xl font-extrabold text-[#E1E3E5]">5.0 / 5.0</p>
+            <p className="text-xl font-extrabold text-[#E1E3E5]">{avgRating} / 5.0</p>
           </div>
         </div>
 
@@ -871,9 +949,17 @@ export default function AdminTestimoniPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFB59E] to-[#DE5B36] hover:from-[#DE5B36] hover:to-[#E86326] text-[#3C0A00] hover:text-white font-bold transition-all shadow-md active:scale-95"
+                  disabled={saving}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFB59E] to-[#DE5B36] hover:from-[#DE5B36] hover:to-[#E86326] text-[#3C0A00] hover:text-white font-bold transition-all shadow-md active:scale-95 disabled:opacity-60 flex items-center gap-2"
                 >
-                  Simpan Ulasan
+                  {saving ? (
+                    <>
+                      <Icon name="sync" size={16} className="animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <span>Simpan Ulasan</span>
+                  )}
                 </button>
               </div>
             </form>

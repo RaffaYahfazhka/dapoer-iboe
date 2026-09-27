@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 export interface TestimonialItem {
   id: string
   badge: string
@@ -81,6 +83,41 @@ export const INITIAL_TESTIMONIALS: TestimonialItem[] = [
 
 const STORAGE_KEY = 'dapoer_iboe_testimonials'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export function mapTestimonialFromDb(row: any): TestimonialItem {
+  return {
+    id: row.id,
+    badge: row.badge,
+    dishName: row.dish_name,
+    quote: row.quote,
+    authorName: row.author_name,
+    authorRole: row.author_role,
+    bgImage: row.bg_image,
+    avatarImage: row.avatar_image,
+    rating: row.rating ?? 5,
+    featured: row.featured ?? true,
+    date: row.date,
+  }
+}
+
+export function mapTestimonialToDb(item: TestimonialItem): Record<string, any> {
+  return {
+    id: item.id,
+    badge: item.badge,
+    dish_name: item.dishName,
+    quote: item.quote,
+    author_name: item.authorName,
+    author_role: item.authorRole,
+    bg_image: item.bgImage,
+    avatar_image: item.avatarImage,
+    rating: item.rating,
+    featured: item.featured ?? true,
+    date: item.date || new Date().toISOString().split('T')[0],
+  }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+// Synchronous local cache access
 export function getStoredTestimonials(): TestimonialItem[] {
   if (typeof window === 'undefined') return INITIAL_TESTIMONIALS
   try {
@@ -104,4 +141,165 @@ export function saveStoredTestimonials(items: TestimonialItem[]): void {
   } catch (err) {
     console.error('Failed to save testimonials:', err)
   }
+}
+
+// In-memory cache for fast repeat reads
+let memoryTestimonialsCache: { data: TestimonialItem[]; timestamp: number } | null = null
+const TESTIMONIALS_CACHE_TTL = 60 * 1000 // 1 minute
+
+export function invalidateTestimonialsCache(): void {
+  memoryTestimonialsCache = null
+}
+
+/**
+ * Fetch testimonials with Supabase database priority, resilient fallback to localStorage/INITIAL_TESTIMONIALS
+ */
+export async function getTestimonialsList(forceFresh = false): Promise<TestimonialItem[]> {
+  const now = Date.now()
+  if (!forceFresh && memoryTestimonialsCache && now - memoryTestimonialsCache.timestamp < TESTIMONIALS_CACHE_TTL) {
+    return memoryTestimonialsCache.data
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('testimonials')
+      .select('*')
+      .order('date', { ascending: false })
+
+    if (!error && data && data.length > 0) {
+      const mapped = data.map(mapTestimonialFromDb)
+      if (typeof window !== 'undefined') {
+        saveStoredTestimonials(mapped)
+      }
+      memoryTestimonialsCache = { data: mapped, timestamp: now }
+      return mapped
+    }
+  } catch (err) {
+    console.warn('Error fetching testimonials from Supabase, using local fallback:', err)
+  }
+
+  const local = getStoredTestimonials()
+  memoryTestimonialsCache = { data: local, timestamp: now }
+  return local
+}
+
+/**
+ * Add or create a new testimonial: immediate local optimistic update + Supabase sync
+ */
+export async function addTestimonial(
+  item: Omit<TestimonialItem, 'id'> & { id?: string }
+): Promise<TestimonialItem> {
+  invalidateTestimonialsCache()
+  const newId = item.id || `testi-${Date.now()}`
+  const newItem: TestimonialItem = {
+    ...item,
+    id: newId,
+    date: item.date || new Date().toISOString().split('T')[0],
+  }
+
+  // 1. Optimistic save in localStorage
+  const current = getStoredTestimonials()
+  const nextItems = [newItem, ...current.filter((t) => t.id !== newId)]
+  saveStoredTestimonials(nextItems)
+
+  // 2. Persist to Supabase
+  try {
+    const row = mapTestimonialToDb(newItem)
+    const { data, error } = await supabase
+      .from('testimonials')
+      .insert(row)
+      .select()
+      .single()
+
+    if (!error && data) {
+      const persisted = mapTestimonialFromDb(data)
+      const updated = getStoredTestimonials().map((t) => (t.id === newId ? persisted : t))
+      saveStoredTestimonials(updated)
+      return persisted
+    }
+  } catch (err) {
+    console.warn('Supabase insert testimonial failed, retained locally:', err)
+  }
+
+  return newItem
+}
+
+/**
+ * Update an existing testimonial: immediate local update + Supabase sync
+ */
+export async function updateTestimonial(
+  id: string,
+  updates: Partial<Omit<TestimonialItem, 'id'>>
+): Promise<TestimonialItem | null> {
+  invalidateTestimonialsCache()
+  const current = getStoredTestimonials()
+  const existing = current.find((t) => t.id === id)
+  if (!existing) return null
+
+  const updated: TestimonialItem = {
+    ...existing,
+    ...updates,
+  }
+
+  const nextItems = current.map((t) => (t.id === id ? updated : t))
+  saveStoredTestimonials(nextItems)
+
+  try {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const dbPayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
+    if (updates.badge !== undefined) dbPayload.badge = updates.badge
+    if (updates.dishName !== undefined) dbPayload.dish_name = updates.dishName
+    if (updates.quote !== undefined) dbPayload.quote = updates.quote
+    if (updates.authorName !== undefined) dbPayload.author_name = updates.authorName
+    if (updates.authorRole !== undefined) dbPayload.author_role = updates.authorRole
+    if (updates.bgImage !== undefined) dbPayload.bg_image = updates.bgImage
+    if (updates.avatarImage !== undefined) dbPayload.avatar_image = updates.avatarImage
+    if (updates.rating !== undefined) dbPayload.rating = updates.rating
+    if (updates.featured !== undefined) dbPayload.featured = updates.featured
+    if (updates.date !== undefined) dbPayload.date = updates.date
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    await supabase.from('testimonials').update(dbPayload).eq('id', id)
+  } catch (err) {
+    console.warn('Supabase update testimonial failed:', err)
+  }
+
+  return updated
+}
+
+/**
+ * Delete a testimonial: immediate local update + Supabase sync
+ */
+export async function deleteTestimonial(id: string): Promise<void> {
+  invalidateTestimonialsCache()
+  const current = getStoredTestimonials()
+  const nextItems = current.filter((t) => t.id !== id)
+  saveStoredTestimonials(nextItems)
+
+  try {
+    await supabase.from('testimonials').delete().eq('id', id)
+  } catch (err) {
+    console.warn('Supabase delete testimonial failed:', err)
+  }
+}
+
+/**
+ * Reset testimonials back to default initial list
+ */
+export async function resetTestimonialsToDefault(): Promise<TestimonialItem[]> {
+  invalidateTestimonialsCache()
+  saveStoredTestimonials(INITIAL_TESTIMONIALS)
+
+  try {
+    // Delete existing rows and reseed defaults
+    await supabase.from('testimonials').delete().neq('id', 'dummy-placeholder')
+    const rows = INITIAL_TESTIMONIALS.map(mapTestimonialToDb)
+    await supabase.from('testimonials').insert(rows)
+  } catch (err) {
+    console.warn('Supabase reset testimonials failed, local reset:', err)
+  }
+
+  return INITIAL_TESTIMONIALS
 }
